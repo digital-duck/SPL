@@ -1,0 +1,82 @@
+[
+  {
+    "feature": "Parse hello_world.spl",
+    "status": "PASS"
+  },
+  {
+    "feature": "Parse rag_query.spl",
+    "status": "PASS"
+  },
+  {
+    "feature": "Parse multi_step.spl",
+    "status": "PASS"
+  },
+  {
+    "feature": "Parse custom_function.spl",
+    "status": "PASS"
+  },
+  {
+    "feature": "WITH BUDGET clause parsed",
+    "status": "PASS"
+  },
+  {
+    "feature": "LIMIT clause on SELECT items",
+    "status": "PASS"
+  },
+  {
+    "feature": "OUTPUT BUDGET in GENERATE",
+    "status": "PASS"
+  },
+  {
+    "feature": "EXPLAIN produces tree output",
+    "status": "PASS"
+  },
+  {
+    "feature": "EXPLAIN shows percentages",
+    "status": "PASS"
+  },
+  {
+    "feature": "EXPLAIN shows estimated cost",
+    "status": "PASS"
+  },
+  {
+    "feature": "rag.query() parsed in SELECT",
+    "status": "PASS"
+  },
+  {
+    "feature": "VectorStore importable",
+    "status": "PASS"
+  },
+  {
+    "feature": "memory.get() parsed in SELECT",
+    "status": "PASS"
+  },
+  {
+    "feature": "MemoryStore importable",
+    "status": "PASS"
+  },
+  {
+    "feature": "WITH ... AS parsed in multi_step.spl",
+    "status": "PASS"
+  },
+  {
+    "feature": "CREATE FUNCTION parsed",
+    "status": "PASS"
+  },
+  {
+    "feature": "ClaudeCLIAdapter importable",
+    "status": "PASS"
+  },
+  {
+    "feature": "OpenRouterAdapter importable",
+    "status": "PASS"
+  },
+  {
+    "feature": "Over-budget triggers compression",
+    "status": "PASS"
+  },
+  {
+    "feature": "Parser works without ANTLR/Lark",
+    "status": "PASS"
+  }
+]

@@ -1,0 +1,201 @@
+{
+  "varying_budgets": [
+    {
+      "budget": 2000,
+      "system": 20,
+      "question": 200,
+      "docs": 666,
+      "history": 250,
+      "output": 500,
+      "buffer": 364,
+      "input_total": 1136,
+      "utilization": 81.8,
+      "compressions": 0
+    },
+    {
+      "budget": 4000,
+      "system": 20,
+      "question": 200,
+      "docs": 1333,
+      "history": 500,
+      "output": 1000,
+      "buffer": 947,
+      "input_total": 2053,
+      "utilization": 76.3,
+      "compressions": 0
+    },
+    {
+      "budget": 8000,
+      "system": 20,
+      "question": 200,
+      "docs": 2666,
+      "history": 1000,
+      "output": 2000,
+      "buffer": 2114,
+      "input_total": 3886,
+      "utilization": 73.6,
+      "compressions": 0
+    },
+    {
+      "budget": 16000,
+      "system": 20,
+      "question": 200,
+      "docs": 5333,
+      "history": 2000,
+      "output": 4000,
+      "buffer": 4447,
+      "input_total": 7553,
+      "utilization": 72.2,
+      "compressions": 0
+    },
+    {
+      "budget": 32000,
+      "system": 20,
+      "question": 200,
+      "docs": 8000,
+      "history": 2000,
+      "output": 8000,
+      "buffer": 13780,
+      "input_total": 10220,
+      "utilization": 56.9,
+      "compressions": 0
+    }
+  ],
+  "over_budget": [
+    {
+      "multiplier": 0.5,
+      "requested_tokens": 1220,
+      "allocated_tokens": 1220,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 0,
+      "compression_ratios": {},
+      "optimizations": []
+    },
+    {
+      "multiplier": 1.0,
+      "requested_tokens": 2220,
+      "allocated_tokens": 2220,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 0,
+      "compression_ratios": {},
+      "optimizations": []
+    },
+    {
+      "multiplier": 1.5,
+      "requested_tokens": 3220,
+      "allocated_tokens": 3020,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 1,
+      "compression_ratios": {
+        "docs": 0.911
+      },
+      "optimizations": [
+        "Budget exceeded, applying proportional compression",
+        "Compressed docs: 2250 -> 2050 tokens (91%)"
+      ]
+    },
+    {
+      "multiplier": 2.0,
+      "requested_tokens": 4220,
+      "allocated_tokens": 3020,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 1,
+      "compression_ratios": {
+        "docs": 0.6
+      },
+      "optimizations": [
+        "Budget exceeded, applying proportional compression",
+        "Compressed docs: 3000 -> 1800 tokens (60%)"
+      ]
+    },
+    {
+      "multiplier": 3.0,
+      "requested_tokens": 6220,
+      "allocated_tokens": 3120,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 3,
+      "compression_ratios": {
+        "history": 0.5,
+        "docs": 0.5,
+        "question": 0.5
+      },
+      "optimizations": [
+        "Budget exceeded, applying proportional compression",
+        "Compressed docs: 4500 -> 2250 tokens (50%)",
+        "Compressed history: 1500 -> 750 tokens (50%)",
+        "Compressed question: 200 -> 100 tokens (50%)"
+      ]
+    },
+    {
+      "multiplier": 4.0,
+      "requested_tokens": 8220,
+      "allocated_tokens": 4120,
+      "budget": 4000,
+      "output_budget": 1000,
+      "input_budget": 3000,
+      "num_compressed": 3,
+      "compression_ratios": {
+        "history": 0.5,
+        "docs": 0.5,
+        "question": 0.5
+      },
+      "optimizations": [
+        "Budget exceeded, applying proportional compression",
+        "Compressed docs: 6000 -> 3000 tokens (50%)",
+        "Compressed history: 2000 -> 1000 tokens (50%)",
+        "Compressed question: 200 -> 100 tokens (50%)"
+      ]
+    }
+  ],
+  "priority_ordering": {
+    "steps": [
+      {
+        "order": 1,
+        "priority": 0,
+        "alias": "__system_role__",
+        "operation": "system_role"
+      },
+      {
+        "order": 2,
+        "priority": 1,
+        "alias": "cached",
+        "operation": "memory_get"
+      },
+      {
+        "order": 3,
+        "priority": 1,
+        "alias": "profile",
+        "operation": "memory_get"
+      },
+      {
+        "order": 4,
+        "priority": 2,
+        "alias": "docs",
+        "operation": "rag_query"
+      },
+      {
+        "order": 5,
+        "priority": 3,
+        "alias": "data",
+        "operation": "load_context"
+      },
+      {
+        "order": 6,
+        "priority": 3,
+        "alias": "extra",
+        "operation": "load_context"
+      }
+    ],
+    "correctly_ordered": true
+  }
+}

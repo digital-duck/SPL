@@ -1,0 +1,56 @@
+[
+  {
+    "model_id": "claude-opus-4-6",
+    "model_name": "Claude Opus 4.6",
+    "tier": "Premium",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.2058,
+    "relative_cost": 60.0
+  },
+  {
+    "model_id": "claude-sonnet-4-5",
+    "model_name": "Claude Sonnet 4.5",
+    "tier": "Balanced",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.04116,
+    "relative_cost": 12.0
+  },
+  {
+    "model_id": "claude-haiku-4-5",
+    "model_name": "Claude Haiku 4.5",
+    "tier": "Economy",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.00343,
+    "relative_cost": 1.0
+  },
+  {
+    "model_id": "gpt-4o",
+    "model_name": "GPT-4o",
+    "tier": "Flagship",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.0293,
+    "relative_cost": 8.5
+  },
+  {
+    "model_id": "gpt-4",
+    "model_name": "GPT-4",
+    "tier": "Legacy Premium",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.2316,
+    "relative_cost": 67.5
+  },
+  {
+    "model_id": "gpt-3.5-turbo",
+    "model_name": "GPT-3.5 Turbo",
+    "tier": "Budget",
+    "input_tokens": 3720,
+    "output_tokens": 2000,
+    "estimated_cost": 0.00486,
+    "relative_cost": 1.4
+  }
+]

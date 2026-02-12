@@ -666,13 +666,18 @@ class Parser:
         # Continue consuming MINUS + (IDENTIFIER | INTEGER | FLOAT)
         while self._check(TokenType.MINUS):
             self._advance()  # consume -
+            segment = ""
             tok = self._current()
             if tok.type == TokenType.IDENTIFIER:
-                parts.append(self._advance().value)
+                segment = self._advance().value
             elif tok.type == TokenType.INTEGER:
-                parts.append(self._advance().value)
+                segment = self._advance().value
+                # Handle cases like "4o" where INTEGER is followed by IDENTIFIER
+                if self._check(TokenType.IDENTIFIER):
+                    segment += self._advance().value
             elif tok.type == TokenType.FLOAT:
-                parts.append(self._advance().value)
+                segment = self._advance().value
             else:
                 break
+            parts.append(segment)
         return '-'.join(parts)

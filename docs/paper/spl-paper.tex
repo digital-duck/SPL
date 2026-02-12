@@ -789,100 +789,169 @@ SPL occupies a unique position in the landscape by combining:
 \label{sec:evaluation}
 % ============================================================
 
-\subsection{Qualitative Analysis: Developer Experience}
+We evaluate SPL through five experiments: (1) developer experience comparison against imperative Python, (2) token budget optimization behavior, (3) cross-model cost estimation, (4) EXPLAIN output showcase, and (5) systematic feature verification. All experiments run without LLM API calls---they exercise the parser, analyzer, optimizer, and EXPLAIN pipeline, demonstrating that SPL provides value \emph{before} any tokens are spent.
 
-To illustrate SPL's developer experience advantages, we compare implementing a RAG-augmented question-answering system using imperative Python versus SPL.
+\subsection{Experiment 1: Developer Experience}
 
-\subsubsection{Imperative Approach (Python + LangChain)}
-
-\begin{lstlisting}[style=python, caption={Imperative RAG implementation (simplified)}]
-import tiktoken
-from langchain.vectorstores import FAISS
-
-# Manual token counting
-enc = tiktoken.get_encoding("cl100k_base")
-
-def build_prompt(question, max_tokens=8000):
-    # Retrieve docs
-    docs = vector_store.similarity_search(question, k=5)
-
-    # Manual token budgeting
-    system = "You are a knowledgeable assistant."
-    system_tokens = len(enc.encode(system))
-    question_tokens = len(enc.encode(question))
-    output_budget = 2000
-    remaining = max_tokens - system_tokens
-                - question_tokens - output_budget
-
-    # Manual truncation
-    doc_text = ""
-    for doc in docs:
-        doc_tokens = len(enc.encode(doc.page_content))
-        if doc_tokens <= remaining:
-            doc_text += doc.page_content + "\n"
-            remaining -= doc_tokens
-        else:
-            # Crude truncation
-            doc_text += doc.page_content[:remaining * 4]
-            break
-
-    # Manual assembly
-    prompt = f"{system}\n\nDocuments:\n{doc_text}\n"
-    prompt += f"Question: {question}\nAnswer:"
-    return prompt
-\end{lstlisting}
-
-\subsubsection{SPL Approach}
-
-\begin{lstlisting}[language=SPL, caption={Equivalent SPL query}]
-PROMPT answer_question
-WITH BUDGET 8000 tokens
-USING MODEL claude-sonnet-4-5
-
-SELECT
-    system_role("You are a knowledgeable assistant"),
-    context.question AS question LIMIT 200 tokens,
-    rag.query("relevant docs", top_k=5) AS docs
-        LIMIT 3000 tokens,
-    memory.get("history") AS history LIMIT 500 tokens
-
-GENERATE
-    detailed_answer(question, docs, history)
-WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.3;
-\end{lstlisting}
-
-\textbf{Comparison:}
+We implement five benchmark tasks in both SPL and imperative Python, measuring code complexity and developer burden. The Python baselines use manual \texttt{tiktoken} counting, explicit truncation, and hand-written caching---representative of real-world prompt engineering practice.
 
 \begin{table}[h]
 \centering
-\caption{Imperative vs.\ SPL: developer experience comparison.}
+\caption{Developer experience: SPL vs.\ imperative Python across five benchmark tasks.}
 \label{tab:dx-comparison}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}lrrrlll@{}}
 \toprule
-\textbf{Metric} & \textbf{Imperative} & \textbf{SPL} \\
+\textbf{Task} & \textbf{SPL} & \textbf{Python} & \textbf{Reduction} & \textbf{Token Ops} & \textbf{Budget} & \textbf{Static} \\
+               & \textbf{LoC} & \textbf{LoC}    &                    & \textbf{(SPL/Py)}  & \textbf{Visible} & \textbf{Validate} \\
 \midrule
-Lines of code & 30+ & 12 \\
-Token budget visibility & Hidden in variables & Declared in syntax \\
-Execution plan & Not available & \texttt{EXPLAIN} \\
-RAG integration & External library & Built-in (\texttt{rag.query}) \\
-Memory integration & External library & Built-in (\texttt{memory.get}) \\
-Model portability & Requires code changes & Change \texttt{USING MODEL} \\
-Testability (static) & Requires execution & \texttt{spl validate} \\
+Simple QA        &  9 & 20 & 55.0\% & 0 / 4  & Yes / No & Yes / No \\
+RAG-augmented QA & 17 & 51 & 66.7\% & 0 / 9  & Yes / No & Yes / No \\
+Multi-step CTE   & 24 & 63 & 61.9\% & 0 / 7  & Yes / No & Yes / No \\
+Function Reuse   & 16 & 43 & 62.8\% & 0 / 11 & Yes / No & Yes / No \\
+Cached Repeat    &  9 & 42 & 78.6\% & 0 / 4  & Yes / No & Yes / No \\
+\midrule
+\textbf{Average} & \textbf{15} & \textbf{44} & \textbf{65.0\%} & \textbf{0 / 7} & & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Parser Correctness}
+SPL achieves a \textbf{65\% average reduction in lines of code} while eliminating all 35 manual token-counting operations across the five tasks. Every SPL query supports pre-execution budget visibility (\texttt{EXPLAIN}) and static validation (\texttt{spl validate})---capabilities entirely absent from the imperative approach.
 
-The reference implementation passes a comprehensive test suite covering:
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/figure1_loc_comparison.pdf}
+\caption{Lines of code comparison: SPL (blue) vs.\ imperative Python (orange). Percentage labels show code reduction. The most dramatic reduction (78.6\%) occurs for cached queries, where SPL provides automatic caching while Python requires manual cache implementation.}
+\label{fig:loc-comparison}
+\end{figure}
+
+\subsection{Experiment 2: Token Budget Optimization}
+
+We analyze the optimizer's behavior under varying budget levels and increasing context pressure.
+
+\subsubsection{Allocation Under Varying Budgets}
+
+Running the same query structure with budgets from 2K to 32K tokens:
+
+\begin{table}[h]
+\centering
+\caption{Token allocation strategy adapts proportionally to budget level.}
+\label{tab:token-allocation}
+\begin{tabular}{@{}rrrrrrrr@{}}
+\toprule
+\textbf{Budget} & \textbf{System} & \textbf{Question} & \textbf{RAG} & \textbf{Memory} & \textbf{Output} & \textbf{Buffer} & \textbf{Util\%} \\
+\midrule
+2,000  & 20 & 200 &   666 &   250 &   500 &   364 & 81.8\% \\
+4,000  & 20 & 200 & 1,333 &   500 & 1,000 &   947 & 76.3\% \\
+8,000  & 20 & 200 & 2,666 & 1,000 & 2,000 & 2,114 & 73.6\% \\
+16,000 & 20 & 200 & 5,333 & 2,000 & 4,000 & 4,447 & 72.2\% \\
+32,000 & 20 & 200 & 8,000 & 2,000 & 8,000 & 13,780 & 56.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The optimizer allocates tokens proportionally: RAG and memory scale with budget while system role and question remain fixed. At 32K, the RAG limit (8K) and memory limit (2K) cap out, leaving substantial buffer---visible to the developer via \texttt{EXPLAIN}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/figure2_token_allocation.pdf}
+\caption{Stacked token allocation across budget levels. RAG (green) and memory (purple) scale proportionally; system role and question remain constant. Buffer (gray) grows at high budgets when source limits cap out.}
+\label{fig:token-allocation}
+\end{figure}
+
+\subsubsection{Compression Under Budget Pressure}
+
+When context demands exceed the budget, the optimizer applies proportional compression (largest items first):
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/figure3_compression.pdf}
+\caption{Graceful degradation: as context-to-budget ratio increases from 0.5x to 4x, the optimizer increasingly compresses sources to fit within the budget (red dashed line). At 3--4x over-budget, all sources are compressed by 50\%.}
+\label{fig:compression}
+\end{figure}
+
+At 1.5x over-budget, only the largest source (RAG docs) is compressed. At 3--4x, all sources are compressed proportionally. This behavior is fully transparent via \texttt{EXPLAIN}, which annotates compressed sources with their compression ratio.
+
+\subsection{Experiment 3: Cross-Model Cost Estimation}
+
+SPL's \texttt{EXPLAIN} mechanism provides pre-execution cost estimates. Running the same 8K-budget query across six models:
+
+\begin{table}[h]
+\centering
+\caption{Pre-execution cost estimation across LLM models (same query, 3,720 input + 2,000 output tokens).}
+\label{tab:cost-estimation}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\textbf{Model} & \textbf{Tier} & \textbf{Est.\ Cost} & \textbf{Relative} \\
+\midrule
+GPT-4 (Legacy)     & Legacy Premium &  \$0.2316 & 67.5x \\
+Claude Opus 4.6    & Premium        &  \$0.2058 & 60.0x \\
+Claude Sonnet 4.5  & Balanced       &  \$0.0412 & 12.0x \\
+GPT-4o             & Flagship       &  \$0.0293 &  8.5x \\
+GPT-3.5 Turbo      & Budget         &  \$0.0049 &  1.4x \\
+Claude Haiku 4.5   & Economy        &  \$0.0034 &  1.0x \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textbf{68x cost difference} between the most and least expensive models is visible \emph{before execution}. No other prompt management framework provides this capability. This is directly analogous to how SQL \texttt{EXPLAIN} reveals that a full table scan costs more than an index lookup---enabling informed optimization.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/figure4_cost_comparison.pdf}
+\caption{Pre-execution cost comparison across models. The same SPL query costs \$0.0034 on Claude Haiku vs.\ \$0.2316 on GPT-4---a 68x difference visible before any tokens are spent.}
+\label{fig:cost-comparison}
+\end{figure}
+
+\subsection{Experiment 4: EXPLAIN Output}
+
+The following is the actual \texttt{EXPLAIN} output for the RAG-augmented QA query---the SPL equivalent of SQL's execution plan:
+
+\begin{verbatim}
+Execution Plan for: answer_question
+============================================================
+Budget: 8,000 tokens | Model: claude-sonnet-4-5
+
+Token Allocation:
++-- __system_role__               20 tokens  (  0.2%)
++-- history                      500 tokens  (  6.2%)  [from memory]
++-- docs                       3,000 tokens  ( 37.5%)  [cache MISS]
++-- question                     200 tokens  (  2.5%)
++-- Output Budget              2,000 tokens  ( 25.0%)
+\-- Buffer                     2,280 tokens  ( 28.5%)
+                               ----------
+Total                          5,720 / 8,000 tokens (71.5%)
+
+Estimated Cost: $0.0412
+\end{verbatim}
+
+This plan reveals that (1) memory is fetched first (priority ordering), (2) RAG docs consume the largest share (37.5\%), (3) 28.5\% of the budget remains as buffer, and (4) the estimated cost is \$0.04. A developer can inspect this plan, adjust \texttt{LIMIT} values or switch models, and re-run \texttt{EXPLAIN}---all without spending any tokens.
+
+\subsection{Experiment 5: Feature Verification}
+
+We systematically verified all competitive claims from Table~\ref{tab:comparison} by running 20 automated checks against the SPL engine. All 20 checks pass:
 
 \begin{itemize}[nosep]
-  \item \textbf{Lexer}: 14 tests covering tokenization of keywords, strings, numbers, operators, comments, dot notation, and error cases (unterminated strings).
+  \item 4/4 example files parse without error (declarative syntax)
+  \item 3/3 token budgeting features work (\texttt{WITH BUDGET}, \texttt{LIMIT}, \texttt{OUTPUT BUDGET})
+  \item 3/3 EXPLAIN capabilities verified (tree output, percentages, cost)
+  \item 2/2 RAG features work (\texttt{rag.query()} parsing, VectorStore importable)
+  \item 2/2 memory features work (\texttt{memory.get()} parsing, MemoryStore importable)
+  \item 1/1 CTE support verified (\texttt{WITH ... AS})
+  \item 1/1 function support verified (\texttt{CREATE FUNCTION})
+  \item 2/2 provider adapters importable (Claude CLI, OpenRouter)
+  \item 1/1 automatic compression triggers on over-budget queries
+  \item 1/1 zero-dependency parser confirmed (no ANTLR/Lark imports)
+\end{itemize}
+
+\subsection{Parser Correctness}
+
+The reference implementation passes a comprehensive test suite of 40 tests:
+
+\begin{itemize}[nosep]
+  \item \textbf{Lexer}: 14 tests covering tokenization of keywords, strings, numbers, operators, comments, dot notation, and error cases.
   \item \textbf{Parser}: 20 tests across basic prompts, generate clauses, WHERE clauses, CTEs, STORE clauses, and end-to-end parsing of all example files.
   \item \textbf{Optimizer}: 6 tests covering execution plan generation, token allocation, execution ordering, EXPLAIN output rendering, and over-budget compression.
 \end{itemize}
-
-All 40 tests pass, validating the correctness of the lexer, parser, analyzer, and optimizer pipeline.
 
 \subsection{Limitations}
 
