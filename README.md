@@ -128,9 +128,49 @@ print(result.content)
 
 See [docs/dev/design-v1.md](docs/dev/design-v1.md) for full syntax specification and [docs/grammar.ebnf](docs/grammar.ebnf) for formal grammar.
 
+## Benchmark Results
+
+SPL was evaluated across 5 experiments (all runnable without API keys):
+
+| Metric | Result |
+|--------|--------|
+| Code reduction vs imperative Python | **65% average** (15 vs 44 lines of code) |
+| Manual token-counting ops eliminated | **35 ops across 5 tasks** (SPL: 0) |
+| Cross-model cost visibility | **68x cost difference** visible before execution |
+| Feature claims verified | **20/20** automated checks pass |
+| Parser test suite | **40/40** tests pass |
+
+```bash
+# Run benchmarks yourself
+python -m tests.benchmarks.bench_developer_experience
+python -m tests.benchmarks.bench_token_optimization
+python -m tests.benchmarks.bench_cost_estimation
+python -m tests.benchmarks.bench_explain_showcase
+python -m tests.benchmarks.bench_feature_verification
+```
+
+## Session 1 Summary (Feb 12, 2026)
+
+The entire SPL engine --- from idea to working prototype with arxiv paper --- was built in a single Human+AI co-creation session:
+
+**What was built:**
+- Complete language specification (EBNF grammar, 30+ keywords, 50+ token types)
+- Full engine pipeline: Lexer, Parser (hand-written recursive descent), Semantic Analyzer, Token Budget Optimizer, Executor
+- Two LLM adapters: OpenRouter.ai (100+ models) + Claude Code CLI (subscription billing)
+- Storage layer: SQLite persistent memory + FAISS vector store (native RAG)
+- CLI tool with 10 commands (`spl init/validate/explain/execute/memory/rag`)
+- 4 example `.spl` programs covering basic QA, RAG, CTEs, and functions
+- 40 unit tests + 5 benchmark experiments + 4 paper figures
+- arxiv paper draft (~12 pages) with formal grammar, evaluation data, and competitive analysis
+- pip-installable package (`spl-lang v0.1.0`)
+
+**The core insight:** The LLM context window is a constrained resource --- just like disk I/O was for databases. Constrained resources deserve declarative query languages with optimizers. This is Codd's 1970 insight applied to 2026's problem.
+
 ## Project
 
 - **Author**: Wen Gong (20+ years Oracle/SQL experience)
-- **Vision**: [SPL Design Thinking](https://github.com/digital-duck/SPL/blob/main/docs/dev/design-v1.md)
+- **Vision**: [SPL Design Thinking](docs/dev/design-v1.md)
+- **Paper**: [arxiv draft](docs/paper/spl-paper.tex) | [figures](docs/paper/figures/) | [benchmark data](docs/paper/data/)
 - **Co-creation**: Built via Human+AI collaboration ([log](docs/dev/co-creation-log.md))
+- **History**: [Why SPL required interdisciplinary thinking](docs/history-lessons.md)
 - **License**: MIT
