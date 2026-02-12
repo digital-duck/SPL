@@ -1,0 +1,131 @@
+(* SPL - Structured Prompt Language *)
+(* Formal Grammar Specification v1.0 *)
+(* Date: February 12, 2026 *)
+
+program          = statement (";" statement)* ";"? EOF ;
+
+statement        = prompt_stmt
+                 | create_func_stmt
+                 | explain_stmt
+                 | execute_stmt ;
+
+(* === PROMPT Statement === *)
+
+prompt_stmt      = "PROMPT" IDENT
+                   header_clauses
+                   cte_block?
+                   select_clause
+                   where_clause?
+                   order_clause?
+                   generate_clause
+                   store_clause? ;
+
+header_clauses   = ("WITH" "BUDGET" INTEGER "TOKENS")?
+                   ("USING" "MODEL" (IDENT | STRING))?
+                   ("CACHE" "FOR" INTEGER IDENT)? ;
+
+(* === Common Table Expressions === *)
+
+cte_block        = "WITH" cte_def ("," cte_def)* ;
+cte_def          = IDENT "AS" "(" cte_body ")" ;
+cte_body         = select_clause
+                   from_clause?
+                   where_clause?
+                   ("LIMIT" INTEGER "TOKENS")? ;
+
+(* === SELECT Clause === *)
+
+select_clause    = "SELECT" select_item ("," select_item)* ;
+select_item      = source_expr ("AS" IDENT)?
+                   ("LIMIT" INTEGER "TOKENS")? ;
+
+source_expr      = system_role_call
+                 | context_ref
+                 | rag_call
+                 | memory_call
+                 | function_call
+                 | IDENT ;
+
+system_role_call = "system_role" "(" STRING ")" ;
+context_ref      = "context" "." IDENT ;
+rag_call         = "rag" "." "query" "(" STRING
+                   ("," "top_k" "=" INTEGER)? ")" ;
+memory_call      = "memory" "." "get" "(" STRING ")" ;
+function_call    = IDENT "(" arg_list? ")" ;
+arg_list         = expression ("," expression)* ;
+
+(* === FROM Clause === *)
+
+from_clause      = "FROM" source_expr ("AS" IDENT)? ;
+
+(* === WHERE Clause === *)
+
+where_clause     = "WHERE" condition (("AND" | "OR") condition)* ;
+condition        = expression comparator expression
+                 | expression "IN" "(" expression_list ")" ;
+comparator       = "=" | "!=" | ">" | "<" | ">=" | "<=" ;
+expression_list  = expression ("," expression)* ;
+
+(* === ORDER BY Clause === *)
+
+order_clause     = "ORDER" "BY" order_item ("," order_item)* ;
+order_item       = expression ("ASC" | "DESC")? ;
+
+(* === GENERATE Clause === *)
+
+generate_clause  = "GENERATE" IDENT "(" arg_list? ")"
+                   generate_opts? ;
+generate_opts    = "WITH" generate_opt ("," generate_opt)* ;
+generate_opt     = "OUTPUT" "BUDGET" INTEGER "TOKENS"
+                 | "TEMPERATURE" FLOAT
+                 | "FORMAT" IDENT ;
+
+(* === STORE Clause === *)
+
+store_clause     = "STORE" "RESULT" "IN" "memory" "." IDENT ;
+
+(* === CREATE FUNCTION === *)
+
+create_func_stmt = "CREATE" "FUNCTION" IDENT
+                   "(" param_list? ")"
+                   "RETURNS" IDENT
+                   "AS" "$$" func_body "$$" ;
+param_list       = param_def ("," param_def)* ;
+param_def        = IDENT IDENT? ;
+func_body        = { any character except "$$" } ;
+
+(* === EXPLAIN === *)
+
+explain_stmt     = "EXPLAIN" "PROMPT" (IDENT | inline_prompt) ;
+inline_prompt    = prompt_stmt ;
+
+(* === EXECUTE === *)
+
+execute_stmt     = "EXECUTE" "PROMPT" IDENT
+                   ("WITH" "PARAMS" "(" param_assignments ")")? ;
+param_assignments = param_assign ("," param_assign)* ;
+param_assign     = qualified_name "=" expression ;
+qualified_name   = IDENT ("." IDENT)* ;
+
+(* === Expressions === *)
+
+expression       = primary_expr (("+" | "-") primary_expr)* ;
+primary_expr     = IDENT ("." IDENT)*
+                 | STRING
+                 | INTEGER
+                 | FLOAT
+                 | function_call
+                 | "@" IDENT ;
+
+(* === Terminals === *)
+
+IDENT            = letter (letter | digit | "_")* ;
+INTEGER          = digit+ ;
+FLOAT            = digit+ "." digit+ ;
+STRING           = '"' { any char except '"' } '"'
+                 | "'" { any char except "'" } "'" ;
+letter           = "a".."z" | "A".."Z" | "_" ;
+digit            = "0".."9" ;
+
+(* === Comments === *)
+comment          = "--" { any char except newline } newline ;

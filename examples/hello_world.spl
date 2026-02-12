@@ -1,0 +1,14 @@
+-- SPL Hello World: simplest possible query
+-- This demonstrates the basic PROMPT/SELECT/GENERATE structure
+
+PROMPT hello_world
+WITH BUDGET 2000 tokens
+USING MODEL claude-sonnet-4-5
+
+SELECT
+    system_role("You are a friendly assistant"),
+    context.user_input AS input LIMIT 500 tokens
+
+GENERATE
+    greeting(input)
+WITH OUTPUT BUDGET 1000 tokens;

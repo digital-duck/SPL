@@ -1,0 +1,31 @@
+-- SPL Multi-Step: Common Table Expressions (CTEs)
+-- Demonstrates WITH clause for composing complex queries
+
+PROMPT analyze_and_recommend
+WITH BUDGET 12000 tokens
+USING MODEL claude-sonnet-4-5
+
+WITH compressed_profile AS (
+    SELECT
+        context.user_profile AS profile
+    LIMIT 500 tokens
+),
+relevant_docs AS (
+    SELECT
+        rag.query("product recommendations", top_k=3) AS docs
+    LIMIT 2000 tokens
+)
+
+SELECT
+    system_role("You are a product recommendation expert"),
+    compressed_profile AS profile,
+    relevant_docs AS docs,
+    memory.get("purchase_history") AS history LIMIT 1000 tokens
+
+GENERATE
+    product_recommendations(profile, docs, history)
+WITH OUTPUT BUDGET 4000 tokens,
+     TEMPERATURE 0.5,
+     FORMAT markdown
+
+STORE RESULT IN memory.last_recommendations;

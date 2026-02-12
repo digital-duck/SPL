@@ -1,0 +1,24 @@
+-- SPL RAG Query: retrieve documents and generate answer
+-- Demonstrates built-in RAG via FAISS vector store
+
+PROMPT answer_question
+WITH BUDGET 8000 tokens
+USING MODEL claude-sonnet-4-5
+
+SELECT
+    system_role("You are a knowledgeable assistant. Answer based on the provided documents."),
+    context.question AS question LIMIT 200 tokens,
+    rag.query("relevant documentation", top_k=5) AS docs LIMIT 3000 tokens,
+    memory.get("conversation_history") AS history LIMIT 500 tokens
+
+WHERE
+    docs.relevance > 0.7
+
+ORDER BY
+    docs.relevance DESC
+
+GENERATE
+    detailed_answer(question, docs, history)
+WITH OUTPUT BUDGET 2000 tokens,
+     TEMPERATURE 0.3,
+     FORMAT markdown;

@@ -1,0 +1,22 @@
+-- SPL Custom Function: user-defined reusable components
+-- Demonstrates CREATE FUNCTION for prompt composition
+
+CREATE FUNCTION compress_bio(bio, max_tokens)
+RETURNS text
+AS $$
+    SELECT bio LIMIT max_tokens tokens
+$$;
+
+PROMPT team_overview
+WITH BUDGET 10000 tokens
+USING MODEL claude-sonnet-4-5
+
+SELECT
+    system_role("You are a team management assistant"),
+    context.team_data AS team LIMIT 2000 tokens,
+    context.project_status AS project LIMIT 1500 tokens
+
+GENERATE
+    team_summary(team, project)
+WITH OUTPUT BUDGET 3000 tokens,
+     TEMPERATURE 0.4;
