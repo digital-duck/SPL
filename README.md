@@ -28,12 +28,32 @@ WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.3;
 | Trial-and-error truncation | `LIMIT 500 tokens` (auto-compressed) |
 | No visibility into allocation | `EXPLAIN PROMPT` shows full plan |
 | Copy-paste prompt templates | CTEs, functions, composition |
-| Tied to one LLM provider | Provider-agnostic (OpenRouter) |
+| Tied to one LLM provider | Provider-agnostic (Ollama, OpenRouter, Claude CLI) |
 
 ## Install
 
 ```bash
+# Core install
 pip install spl-lang
+
+# With ChromaDB vector store support
+pip install "spl-lang[chroma]"
+```
+
+### Zero-cost quick start with Ollama
+
+Run SPL queries entirely locally — no API key, no cost:
+
+```bash
+# 1. Install Ollama: https://ollama.ai/download
+# 2. Pull a model
+ollama pull llama3.2        # 2 GB, great for most tasks
+ollama pull qwen2.5         # strong reasoning and code
+
+# 3. Install SPL and run
+pip install spl-lang
+spl init                    # creates .spl/config.yaml — set adapter: ollama
+spl execute examples/hello_world.spl
 ```
 
 ## Quick Start
@@ -51,8 +71,9 @@ spl explain examples/hello_world.spl
 # Execute query
 spl execute examples/hello_world.spl --param question="What is Python?"
 
-# Built-in RAG
+# Built-in RAG (FAISS by default, or use --backend chroma)
 spl rag add my_docs.txt
+spl rag add my_docs.txt --backend chroma
 spl rag query "search text" --top-k 5
 
 # Persistent memory
@@ -88,17 +109,18 @@ SPL Source (.spl)
     |
 [Lexer] -> [Parser] -> [Analyzer] -> [Optimizer] -> [Executor]
                                                     /    |    \
-                                                [LLM] [SQLite] [FAISS]
-                                                  |       |       |
-                                              OpenRouter  Memory   RAG
-                                              or Claude CLI
+                                                [LLM] [SQLite] [FAISS or ChromaDB]
+                                                  |       |
+                                          Ollama (local)  Memory
+                                          OpenRouter       RAG
+                                          Claude CLI
 ```
 
 **Key design decisions:**
 - **Parser**: Hand-written recursive descent (zero external parser deps)
-- **LLM**: OpenRouter.ai (production, 100+ models) + Claude CLI (dev, subscription billing)
+- **LLM**: Ollama (local, free) + OpenRouter.ai (production, 100+ models) + Claude CLI (dev)
 - **Memory**: SQLite (file-based, portable, zero-config)
-- **Vector Store**: FAISS (file-based, native RAG)
+- **Vector Store**: FAISS (default) or ChromaDB (`--backend chroma`)
 - **Storage**: `.spl/` directory per project
 
 ## Python API
@@ -138,7 +160,7 @@ SPL was evaluated across 5 experiments (all runnable without API keys):
 | Manual token-counting ops eliminated | **35 ops across 5 tasks** (SPL: 0) |
 | Cross-model cost visibility | **68x cost difference** visible before execution |
 | Feature claims verified | **20/20** automated checks pass |
-| Parser test suite | **40/40** tests pass |
+| Parser test suite | **58/58** tests pass (incl. FAISS + ChromaDB storage) |
 
 ```bash
 # Run benchmarks yourself
@@ -156,8 +178,8 @@ The entire SPL engine --- from idea to working prototype with arxiv paper --- wa
 **What was built:**
 - Complete language specification (EBNF grammar, 30+ keywords, 50+ token types)
 - Full engine pipeline: Lexer, Parser (hand-written recursive descent), Semantic Analyzer, Token Budget Optimizer, Executor
-- Two LLM adapters: OpenRouter.ai (100+ models) + Claude Code CLI (subscription billing)
-- Storage layer: SQLite persistent memory + FAISS vector store (native RAG)
+- Three LLM adapters: Ollama (local, free) + OpenRouter.ai (100+ models) + Claude Code CLI (subscription billing)
+- Storage layer: SQLite persistent memory + FAISS vector store + ChromaDB (native RAG)
 - CLI tool with 10 commands (`spl init/validate/explain/execute/memory/rag`)
 - 4 example `.spl` programs covering basic QA, RAG, CTEs, and functions
 - 40 unit tests + 5 benchmark experiments + 4 paper figures
@@ -173,4 +195,4 @@ The entire SPL engine --- from idea to working prototype with arxiv paper --- wa
 - **Paper**: [arxiv draft](docs/paper/spl-paper.tex) | [figures](docs/paper/figures/) | [benchmark data](docs/paper/data/)
 - **Co-creation**: Built via Human+AI collaboration ([log](docs/dev/co-creation-log.md))
 - **History**: [Why SPL required interdisciplinary thinking](docs/history-lessons.md)
-- **License**: MIT
+- **License**: Apache 2.0

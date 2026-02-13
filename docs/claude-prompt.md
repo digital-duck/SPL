@@ -7,7 +7,7 @@ Copy and paste the prompt below into a new Claude Code session from the SPL proj
 ## Prompt
 
 ```
-Please create a CLAUDE.md file at the project root for this SPL (Structured Prompt Language) project. Analyze the codebase and produce a concise, high-signal file that will be loaded at the start of every Claude Code session. Follow these guidelines:
+Please create a CLAUDE-prompted.md file at the project root for this SPL (Structured Prompt Language) project. Analyze the codebase and produce a concise, high-signal file that will be loaded at the start of every Claude Code session. Follow these guidelines:
 
 1. Read the project structure, pyproject.toml, key source files, tests, and examples
 2. Keep it concise --- every line should prevent a mistake Claude would otherwise make

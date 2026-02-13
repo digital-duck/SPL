@@ -1,0 +1,42 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Beurer-Kellner et~al.(2023)Beurer-Kellner, Fischer, and
+  Vechev]{beurer2023prompting}
+Luca Beurer-Kellner, Marc Fischer, and Martin Vechev.
+\newblock Prompting is programming: A query language for large language models.
+\newblock In \emph{Proceedings of the ACM on Programming Languages}, volume~7,
+  pages 1946--1969. ACM, 2023.
+
+\bibitem[Chamberlin and Boyce(1974)]{chamberlin1974sequel}
+Donald~D. Chamberlin and Raymond~F. Boyce.
+\newblock {SEQUEL}: A structured {English} query language.
+\newblock \emph{Proceedings of the 1974 ACM SIGFIDET workshop on Data
+  description, access and control}, pages 249--264, 1974.
+
+\bibitem[Codd(1970)]{codd1970relational}
+Edgar~F. Codd.
+\newblock A relational model of data for large shared data banks.
+\newblock \emph{Communications of the ACM}, 13\penalty0 (6):\penalty0 377--387,
+  1970.
+
+\bibitem[Khattab et~al.(2023)Khattab, Singhvi, Maheshwari, Zhang, Santhanam,
+  Vardhamanan, Haq, Sharma, Joshi, Mober, et~al.]{khattab2023dspy}
+Omar Khattab, Arnav Singhvi, Paridhi Maheshwari, Zhiyuan Zhang, Keshav
+  Santhanam, Sri Vardhamanan, Saiful Haq, Ashutosh Sharma, Thomas~T. Joshi,
+  Hanna Mober, et~al.
+\newblock {DSPy}: Compiling declarative language model calls into
+  self-improving pipelines.
+\newblock \emph{arXiv preprint arXiv:2310.03714}, 2023.
+
+\bibitem[{Microsoft}(2024)]{prompty2024}
+{Microsoft}.
+\newblock Prompty: Standardized prompt asset format.
+\newblock \url{https://prompty.ai}, 2024.
+\newblock Accessed: 2026-02-12.
+
+\end{thebibliography}

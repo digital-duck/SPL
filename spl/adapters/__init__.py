@@ -27,8 +27,10 @@ def list_adapters() -> list[str]:
 def _register_builtin_adapters():
     from spl.adapters.claude_cli import ClaudeCLIAdapter
     from spl.adapters.openrouter import OpenRouterAdapter
+    from spl.adapters.ollama import OllamaAdapter
     register_adapter("claude_cli", ClaudeCLIAdapter)
     register_adapter("openrouter", OpenRouterAdapter)
+    register_adapter("ollama", OllamaAdapter)
 
 
 _register_builtin_adapters()

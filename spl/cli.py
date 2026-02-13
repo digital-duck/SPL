@@ -304,20 +304,28 @@ def _cmd_memory(args: list[str]):
 def _cmd_rag(args: list[str]):
     """RAG operations."""
     if not args:
-        print("Usage: spl rag [add|query|count]")
+        print("Usage: spl rag [add|query|count] [--backend faiss|chroma]")
         sys.exit(1)
 
     subcmd = args[0]
 
+    # --backend flag (default: faiss)
+    backend = "faiss"
+    if "--backend" in args:
+        idx = args.index("--backend")
+        if idx + 1 < len(args):
+            backend = args[idx + 1]
+
+    from spl.storage import get_vector_store
+
     if subcmd == "add":
         if len(args) < 2:
-            print("Usage: spl rag add <file>")
+            print("Usage: spl rag add <file> [--backend faiss|chroma]")
             sys.exit(1)
         filepath = args[1]
         text = _read_file(filepath)
 
-        from spl.storage.vector import VectorStore
-        store = VectorStore(".spl")
+        store = get_vector_store(backend, ".spl")
 
         # Chunk text into paragraphs
         chunks = [c.strip() for c in text.split('\n\n') if c.strip()]
@@ -328,13 +336,13 @@ def _cmd_rag(args: list[str]):
             chunks,
             [{"source": filepath, "chunk": i} for i in range(len(chunks))]
         )
-        print(f"Indexed {len(ids)} chunks from {filepath}")
+        print(f"Indexed {len(ids)} chunks from {filepath} (backend: {backend})")
         print(f"Total documents: {store.count()}")
         store.close()
 
     elif subcmd == "query":
         if len(args) < 2:
-            print("Usage: spl rag query \"<text>\" [--top-k N]")
+            print("Usage: spl rag query \"<text>\" [--top-k N] [--backend faiss|chroma]")
             sys.exit(1)
 
         query_text = args[1]
@@ -344,8 +352,7 @@ def _cmd_rag(args: list[str]):
             if idx + 1 < len(args):
                 top_k = int(args[idx + 1])
 
-        from spl.storage.vector import VectorStore
-        store = VectorStore(".spl")
+        store = get_vector_store(backend, ".spl")
 
         results = store.query(query_text, top_k=top_k)
         if results:
@@ -360,9 +367,8 @@ def _cmd_rag(args: list[str]):
         store.close()
 
     elif subcmd == "count":
-        from spl.storage.vector import VectorStore
-        store = VectorStore(".spl")
-        print(f"Documents indexed: {store.count()}")
+        store = get_vector_store(backend, ".spl")
+        print(f"Documents indexed: {store.count()} (backend: {backend})")
         store.close()
 
     else:

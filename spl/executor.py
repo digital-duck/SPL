@@ -14,6 +14,7 @@ from spl.adapters import get_adapter
 from spl.adapters.base import LLMAdapter, GenerationResult
 from spl.storage.memory import MemoryStore
 from spl.storage.vector import VectorStore
+from spl.storage import get_vector_store
 from spl.token_counter import TokenCounter
 from spl.functions import FunctionRegistry
 
@@ -43,6 +44,7 @@ class Executor:
         adapter_name: str = "claude_cli",
         adapter: LLMAdapter | None = None,
         storage_dir: str = ".spl",
+        vector_backend: str = "faiss",
     ):
         self.adapter = adapter or get_adapter(adapter_name)
         self.memory = MemoryStore(f"{storage_dir}/memory.db")
@@ -51,11 +53,12 @@ class Executor:
         # Vector store is optional (only needed if RAG queries exist)
         self._vector_store: VectorStore | None = None
         self._storage_dir = storage_dir
+        self._vector_backend = vector_backend
 
     @property
     def vector_store(self) -> VectorStore:
         if self._vector_store is None:
-            self._vector_store = VectorStore(self._storage_dir)
+            self._vector_store = get_vector_store(self._vector_backend, self._storage_dir)
         return self._vector_store
 
     async def execute(

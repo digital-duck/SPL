@@ -1,0 +1,127 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand*\HyPL@Entry[1]{}
+\citation{codd1970relational}
+\citation{chamberlin1974sequel}
+\HyPL@Entry{0<</S/D>>}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}The Core Insight: LLM as Generative Knowledge Base}{2}{subsection.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces The SQL--SPL parallel: from static to generative knowledge bases.}}{2}{table.1}\protected@file@percent }
+\newlabel{tab:sql-spl-parallel}{{1}{2}{The SQL--SPL parallel: from static to generative knowledge bases}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Contributions}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background and Motivation}{3}{section.2}\protected@file@percent }
+\newlabel{sec:background}{{2}{3}{Background and Motivation}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}The Prompt Engineering Problem}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Lessons from SQL's Success}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}The Token Budget as Constrained Resource}{3}{subsection.2.3}\protected@file@percent }
+\newlabel{eq:budget}{{1}{3}{The Token Budget as Constrained Resource}{equation.2.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}The SPL Language}{4}{section.3}\protected@file@percent }
+\newlabel{sec:language}{{3}{4}{The SPL Language}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Design Philosophy}{4}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Core Syntax}{4}{subsection.3.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}Basic SPL query structure}{4}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Built-in Context Sources}{5}{subsection.3.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces SPL built-in context sources.}}{5}{table.2}\protected@file@percent }
+\newlabel{tab:sources}{{2}{5}{SPL built-in context sources}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Common Table Expressions (CTEs)}{5}{subsection.3.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}CTEs for composable prompt construction}{5}{lstlisting.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}User-Defined Functions}{5}{subsection.3.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}User-defined function}{5}{lstlisting.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}EXPLAIN Mechanism}{6}{subsection.3.6}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}EXPLAIN for execution plan transparency}{6}{lstlisting.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Formal Grammar}{6}{subsection.3.7}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}SPL grammar (condensed EBNF)}{6}{lstlisting.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Context as a Constrained Resource}{7}{section.4}\protected@file@percent }
+\newlabel{sec:context-resource}{{4}{7}{Context as a Constrained Resource}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Information-Theoretic Formulation}{7}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Cost Model}{8}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Execution Order Optimization}{8}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}The SPL Engine}{8}{section.5}\protected@file@percent }
+\newlabel{sec:engine}{{5}{8}{The SPL Engine}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Architecture}{8}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.1}Lexer}{8}{subsubsection.5.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces SPL keyword categories.}}{9}{table.3}\protected@file@percent }
+\newlabel{tab:keywords}{{3}{9}{SPL keyword categories}{table.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.2}Parser}{9}{subsubsection.5.1.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Core AST node types.}}{9}{table.4}\protected@file@percent }
+\newlabel{tab:ast-nodes}{{4}{9}{Core AST node types}{table.4}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.3}Semantic Analyzer}{9}{subsubsection.5.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.4}Optimizer}{9}{subsubsection.5.1.4}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces SPL Token Budget Optimizer}}{10}{algorithm.1}\protected@file@percent }
+\newlabel{alg:optimizer}{{1}{10}{Optimizer}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.5}Executor}{10}{subsubsection.5.1.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}LLM Adapter Interface}{10}{subsection.5.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}LLM adapter interface (Python)}{10}{lstlisting.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Storage Layer}{11}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}LLM as Generative Knowledge Base}{11}{section.6}\protected@file@percent }
+\newlabel{sec:generative-kb}{{6}{11}{LLM as Generative Knowledge Base}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}From Retrieval to Synthesis}{11}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}The Duality with SQL}{11}{subsection.6.2}\protected@file@percent }
+\citation{prompty2024}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Implications for Software Engineering}{12}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Related Work}{12}{section.7}\protected@file@percent }
+\newlabel{sec:related}{{7}{12}{Related Work}{section.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Feature comparison of LLM prompt management approaches.}}{12}{table.5}\protected@file@percent }
+\newlabel{tab:comparison}{{5}{12}{Feature comparison of LLM prompt management approaches}{table.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Prompty (Microsoft)}{12}{subsection.7.1}\protected@file@percent }
+\citation{khattab2023dspy}
+\citation{beurer2023prompting}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}DSPy (Stanford)}{13}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}LMQL}{13}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Imperative Frameworks}{14}{subsection.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Positioning SPL}{14}{subsection.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Evaluation}{14}{section.8}\protected@file@percent }
+\newlabel{sec:evaluation}{{8}{14}{Evaluation}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Experiment 1: Developer Experience}{14}{subsection.8.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Developer experience: SPL vs.\ imperative Python across five benchmark tasks.}}{14}{table.6}\protected@file@percent }
+\newlabel{tab:dx-comparison}{{6}{14}{Developer experience: SPL vs.\ imperative Python across five benchmark tasks}{table.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Lines of code comparison: SPL (blue) vs.\ imperative Python (orange). Percentage labels show code reduction. The most dramatic reduction (78.6\%) occurs for cached queries, where SPL provides automatic caching while Python requires manual cache implementation.}}{15}{figure.1}\protected@file@percent }
+\newlabel{fig:loc-comparison}{{1}{15}{Lines of code comparison: SPL (blue) vs.\ imperative Python (orange). Percentage labels show code reduction. The most dramatic reduction (78.6\%) occurs for cached queries, where SPL provides automatic caching while Python requires manual cache implementation}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Experiment 2: Token Budget Optimization}{15}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {8.2.1}Allocation Under Varying Budgets}{15}{subsubsection.8.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Token allocation strategy adapts proportionally to budget level.}}{15}{table.7}\protected@file@percent }
+\newlabel{tab:token-allocation}{{7}{15}{Token allocation strategy adapts proportionally to budget level}{table.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {8.2.2}Compression Under Budget Pressure}{15}{subsubsection.8.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Experiment 3: Cross-Model Cost Estimation}{15}{subsection.8.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Stacked token allocation across budget levels. RAG (green) and memory (purple) scale proportionally; system role and question remain constant. Buffer (gray) grows at high budgets when source limits cap out.}}{16}{figure.2}\protected@file@percent }
+\newlabel{fig:token-allocation}{{2}{16}{Stacked token allocation across budget levels. RAG (green) and memory (purple) scale proportionally; system role and question remain constant. Buffer (gray) grows at high budgets when source limits cap out}{figure.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Pre-execution cost estimation across LLM models (same query, 3,720 input + 2,000 output tokens).}}{16}{table.8}\protected@file@percent }
+\newlabel{tab:cost-estimation}{{8}{16}{Pre-execution cost estimation across LLM models (same query, 3,720 input + 2,000 output tokens)}{table.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Experiment 4: EXPLAIN Output}{16}{subsection.8.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Graceful degradation: as context-to-budget ratio increases from 0.5x to 4x, the optimizer increasingly compresses sources to fit within the budget (red dashed line). At 3--4x over-budget, all sources are compressed by 50\%.}}{17}{figure.3}\protected@file@percent }
+\newlabel{fig:compression}{{3}{17}{Graceful degradation: as context-to-budget ratio increases from 0.5x to 4x, the optimizer increasingly compresses sources to fit within the budget (red dashed line). At 3--4x over-budget, all sources are compressed by 50\%}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Experiment 5: Feature Verification}{17}{subsection.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Parser Correctness}{17}{subsection.8.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Pre-execution cost comparison across models. The same SPL query costs \$0.0034 on Claude Haiku vs.\ \$0.2316 on GPT-4---a 68x difference visible before any tokens are spent.}}{18}{figure.4}\protected@file@percent }
+\newlabel{fig:cost-comparison}{{4}{18}{Pre-execution cost comparison across models. The same SPL query costs \$0.0034 on Claude Haiku vs.\ \$0.2316 on GPT-4---a 68x difference visible before any tokens are spent}{figure.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Limitations and Future Work}{18}{section.9}\protected@file@percent }
+\newlabel{sec:discussion}{{9}{18}{Limitations and Future Work}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Current Limitations}{18}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Learned Optimization}{18}{subsection.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}RAG Application Case Studies}{19}{subsection.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4}Integration with Existing Ecosystems}{19}{subsection.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusion}{19}{section.10}\protected@file@percent }
+\newlabel{sec:conclusion}{{10}{19}{Conclusion}{section.10}{}}
+\bibstyle{plainnat}
+\bibdata{references}
+\bibcite{beurer2023prompting}{{1}{2023}{{Beurer-Kellner et~al.}}{{Beurer-Kellner, Fischer, and Vechev}}}
+\bibcite{chamberlin1974sequel}{{2}{1974}{{Chamberlin and Boyce}}{{}}}
+\bibcite{codd1970relational}{{3}{1970}{{Codd}}{{}}}
+\bibcite{khattab2023dspy}{{4}{2023}{{Khattab et~al.}}{{Khattab, Singhvi, Maheshwari, Zhang, Santhanam, Vardhamanan, Haq, Sharma, Joshi, Mober, et~al.}}}
+\bibcite{prompty2024}{{5}{2024}{{Microsoft}}{{}}}
+\gdef \@abspage@last{20}

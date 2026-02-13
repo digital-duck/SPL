@@ -704,20 +704,19 @@ We compare SPL against existing approaches for managing LLM interactions. Table~
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-\textbf{Feature} & \textbf{SPL} & \textbf{LMQL} & \textbf{Prompty} & \textbf{DSPy} & \textbf{LangChain} \\
+\textbf{Feature} & \textbf{SPL} & \textbf{Prompty} & \textbf{DSPy} & \textbf{LMQL} & \textbf{LangChain} \\
 \midrule
-Declarative query language & \checkmark & \checkmark & -- & -- & -- \\
-Explicit token budgeting & \checkmark & Partial\textsuperscript{a} & -- & -- & -- \\
+Declarative query language & \checkmark & -- & -- & \checkmark & -- \\
+Explicit token budgeting & \checkmark & -- & -- & Partial\textsuperscript{a} & -- \\
 EXPLAIN execution plan & \checkmark & -- & -- & -- & -- \\
 Built-in RAG & \checkmark & -- & -- & -- & Via plugins \\
 Persistent memory & \checkmark & -- & -- & -- & Via plugins \\
 SQL-like CTEs \& functions & \checkmark & -- & -- & -- & -- \\
-Provider-agnostic & \checkmark & \checkmark & Partial\textsuperscript{b} & \checkmark & \checkmark \\
+Provider-agnostic & \checkmark & Partial\textsuperscript{b} & \checkmark & \checkmark & \checkmark \\
 Automatic compression & \checkmark & -- & -- & -- & -- \\
-Formal grammar (EBNF) & \checkmark & \checkmark & -- & -- & -- \\
-Zero-dependency parser & \checkmark & -- & N/A & N/A & N/A \\
-Prompt optimization & --\textsuperscript{c} & -- & -- & \checkmark & -- \\
-SQL knowledge reusable & \checkmark & Partial\textsuperscript{d} & -- & -- & -- \\
+Formal grammar (EBNF) & \checkmark & -- & -- & \checkmark & -- \\
+Zero-dependency parser & \checkmark & N/A & N/A & -- & N/A \\
+Prompt optimization & --\textsuperscript{c} & -- & \checkmark & -- & -- \\
 \bottomrule
 \end{tabular}%
 }
@@ -725,8 +724,7 @@ SQL knowledge reusable & \checkmark & Partial\textsuperscript{d} & -- & -- & -- 
 \smallskip
 \textsuperscript{a} LMQL supports per-variable length constraints but not global budget allocation. \\
 \textsuperscript{b} Prompty primarily targets Azure/OpenAI; community adapters exist for others. \\
-\textsuperscript{c} SPL optimizes \emph{token allocation} (resource management); DSPy optimizes \emph{prompt content} (few-shot examples). These are complementary, not competing, concerns. \\
-\textsuperscript{d} LMQL borrows SQL keywords (\texttt{FROM}, \texttt{WHERE}) for token-level generation constraints, but its mental model differs substantially from relational query thinking. SPL is intentionally modeled on SQL end-to-end, enabling practitioners with SQL experience to adopt GenAI workflows without learning a new programming paradigm.
+\textsuperscript{c} SPL optimizes \emph{token allocation} (resource management); DSPy optimizes \emph{prompt content} (few-shot examples). These are complementary, not competing, concerns.
 \end{table}
 
 \subsection{Prompty (Microsoft)}
@@ -954,12 +952,7 @@ The reference implementation passes a comprehensive test suite of 40 tests:
   \item \textbf{Optimizer}: 6 tests covering execution plan generation, token allocation, execution ordering, EXPLAIN output rendering, and over-budget compression.
 \end{itemize}
 
-% ============================================================
-\section{Limitations and Future Work}
-\label{sec:discussion}
-% ============================================================
-
-\subsection{Current Limitations}
+\subsection{Limitations}
 
 We acknowledge several limitations of the current SPL prototype:
 
@@ -968,6 +961,21 @@ We acknowledge several limitations of the current SPL prototype:
   \item \textbf{Compression is truncation}: The current compression strategy is simple truncation. More sophisticated compression (summarization via a cheaper model, semantic deduplication) is a direction for future work.
   \item \textbf{Limited type system}: SPL does not yet have a rich type system for context sources. Typed schemas for RAG documents, memory values, and function signatures would improve static analysis.
   \item \textbf{Single-query scope}: SPL currently optimizes individual queries. Multi-query optimization (pipeline-level budget allocation across a sequence of SPL queries) is not yet supported.
+\end{enumerate}
+
+% ============================================================
+\section{Discussion and Future Work}
+\label{sec:discussion}
+% ============================================================
+
+\subsection{Toward an SPL Standard}
+
+SQL's greatest impact came not from any single implementation but from standardization (ANSI SQL-86, SQL-92, SQL:1999, etc.). We envision a similar trajectory for SPL:
+
+\begin{enumerate}[nosep]
+  \item \textbf{SPL-1.0} (this paper): Core language with PROMPT, SELECT, GENERATE, CTEs, functions, EXPLAIN.
+  \item \textbf{SPL-2.0}: Transactions (multi-step prompting with rollback), materialized prompts (cached computation), streaming generation.
+  \item \textbf{SPL-3.0}: Multi-modal context (images, audio as context sources), cross-model orchestration, federated context (querying multiple LLMs in a single SPL statement).
 \end{enumerate}
 
 \subsection{Learned Optimization}
@@ -980,20 +988,6 @@ Current SQL query optimizers use sophisticated cost models and statistics. SPL c
   \item \textbf{Model routing}: Automatically selecting the optimal model based on query complexity, required capabilities, and cost constraints.
 \end{itemize}
 
-\subsection{RAG Application Case Studies}
-
-The current evaluation measures developer experience, token budget efficiency, and
-cost estimation on synthetic benchmark tasks. A natural next step is to evaluate SPL
-against real-world RAG applications---for example, document Q\&A, knowledge-base
-search, and multi-hop reasoning pipelines.
-
-Proposed case studies include controlled comparisons of the same RAG application
-implemented (a) with SPL's declarative \texttt{SELECT}/\texttt{GENERATE} pipeline
-and (b) with an equivalent imperative Python implementation, measuring:
-retrieval quality (precision@k, recall@k), end-to-end latency, total token consumption,
-and lines of code. Such studies would provide stronger empirical grounding for SPL's
-claimed benefits and surface failure modes not visible in the current benchmarks.
-
 \subsection{Integration with Existing Ecosystems}
 
 SPL is designed to complement, not replace, existing tools:
@@ -1005,6 +999,9 @@ SPL is designed to complement, not replace, existing tools:
   \item \textbf{SPL for evaluation}: \texttt{EXPLAIN} output as a standard format for prompt auditing and compliance.
 \end{itemize}
 
+\subsection{Human-AI Co-Creation}
+
+This project itself was developed through human-AI collaboration: the first author provided the vision, domain expertise (20+ years of SQL/Oracle experience), and architectural decisions, while the AI collaborator provided implementation, code generation, and synthesis. The complete co-creation log documenting this process is available as supplementary material. We believe this collaborative development methodology---where human domain expertise guides AI implementation capability---represents a productive model for future software development.
 
 % ============================================================
 \section{Conclusion}
@@ -1022,17 +1019,7 @@ SPL's key innovations are:
   \item \textbf{Integrated context management}: Built-in RAG (FAISS) and memory (SQLite) eliminate the need for external context infrastructure.
 \end{enumerate}
 
-Beyond software engineering, SPL lowers the entry barrier for the large community of
-data engineers and analysts who already possess deep SQL expertise.
-As the author's own transition from data engineering to AI engineering illustrates,
-the conceptual leap from \texttt{SELECT} over relational tables to \texttt{PROMPT}/\texttt{SELECT}/\texttt{GENERATE}
-over LLM context sources is far smaller than learning a general-purpose programming framework
-from scratch.
-For the millions of practitioners who think naturally in sets, schemas, and declarative queries,
-SPL offers a familiar on-ramp into the GenAI domain---one that preserves and extends their
-existing mental models rather than discarding them.
-
-The reference implementation is available as an open-source Python package (\texttt{pip install spl-lang}) at \url{https://github.com/digital-duck/SPL}.
+Just as SQL (1970) brought order to the chaos of database access, we believe SPL (2026) can bring order to the chaos of LLM prompt engineering. The reference implementation is available as an open-source Python package (\texttt{pip install spl-lang}) at \url{https://github.com/digital-duck/SPL}.
 
 % ============================================================
 % References
@@ -1040,12 +1027,12 @@ The reference implementation is available as an open-source Python package (\tex
 
 \section*{Acknowledgements}
 
-This project was developed through human and AI collaboration: the author provided the vision, domain expertise (20+ years of SQL/Oracle experience), architectural decisions, experimental design and execution, while the AI collaborator provided implementation, code generation, and synthesis.
-
-The author thanks Claude (Anthropic) in particular for its role as an AI development partner throughout
-this project. The SPL engine, test suite, and manual drafting were developed
+The author thanks Claude (Anthropic) for its role as an AI development partner throughout
+this project. The SPL engine, test suite, and initial draft of this paper were developed
 in close collaboration with Claude, whose ability to implement, synthesise, and iterate
-on complex system designs substantially accelerated the work. 
+on complex system designs substantially accelerated the work. While academic publishing
+conventions preclude AI co-authorship, the contribution was integral and is gratefully
+acknowledged.
 
 The author also thanks the open-source communities behind FAISS, tiktoken, and the
 broader Python ecosystem on which SPL depends.
