@@ -1,0 +1,75 @@
+-- ============================================================
+-- ri_family_v2_openrouter.spl
+-- 日 Family Character Table — OpenRouter variant
+--
+-- Requires:  export OPENROUTER_API_KEY=<your-key>
+--
+-- Model mapping (all fast, cost-effective):
+--   CJK (characters)   → qwen/qwen-2.5-7b-instruct    (fast, strong CJK)
+--   EU (German)        → mistralai/mistral-7b-instruct  (strong EU langs)
+--   Insight / general  → qwen/qwen-2.5-7b-instruct      (replaces llama, much better)
+--   Synthesis          → anthropic/claude-sonnet-4-5
+--
+-- Note: qwen-2.5-72b-instruct was too slow (>2min); 7b-instruct is faster
+--       and sufficient for structured JSON extraction tasks.
+--
+-- Run:
+--   spl execute examples/format-cte-join/ri_family_v2_openrouter.spl \
+--       --adapter openrouter --param radical="日"
+-- ============================================================
+
+PROMPT ri_family_table
+WITH BUDGET 8000 tokens
+USING MODEL "anthropic/claude-sonnet-4-5"
+
+WITH characters AS (
+    PROMPT list_ri_characters
+    WITH BUDGET 2000 tokens
+    USING MODEL "qwen/qwen-2.5-7b-instruct"
+
+    SELECT
+        system_role("You are an expert in Chinese character composition and pinyin romanization. Output only valid JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        list_characters_with_pinyin(radical, "List the 10 most common Chinese characters that contain the radical {radical} and are taught in Chinese primary school. Output ONLY a raw JSON array (no markdown, no explanation) with exactly these keys per object: character, formula, pinyin, english_meaning.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+german AS (
+    PROMPT translate_to_german
+    WITH BUDGET 2000 tokens
+    USING MODEL "mistralai/mistral-7b-instruct"
+
+    SELECT
+        system_role("You are a German linguist. Output only valid JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        german_translations(radical, "List the 10 most common Chinese characters that contain the radical {radical} and are taught in Chinese primary school. Output ONLY a raw JSON array (no markdown, no explanation) with exactly these keys per object: character, german_word, german_explanation.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+insights AS (
+    PROMPT natural_insights
+    WITH BUDGET 2000 tokens
+    USING MODEL "qwen/qwen-2.5-7b-instruct"
+
+    SELECT
+        system_role("You are an expert in Chinese etymology and cultural history. Output only valid JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        cultural_insights(radical, "List the 10 most common Chinese characters that contain the radical {radical} and are taught in Chinese primary school. For each explain the natural or cultural observation encoded in the character. Output ONLY a raw JSON array (no markdown, no explanation) with exactly these keys per object: character, natural_insight.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.2, FORMAT json
+)
+
+SELECT
+    system_role("You are an expert at composing multilingual scholarly tables from structured JSON data. Produce clean, accurate markdown."),
+    context.characters AS char_data LIMIT 2000 tokens,
+    context.german AS german_data LIMIT 2000 tokens,
+    context.insights AS insight_data LIMIT 2000 tokens
+
+GENERATE
+    compose_table(char_data, german_data, insight_data, "Use char_data as the master list of exactly 10 characters. For each character in char_data, look up its German translation in german_data and its cultural insight in insight_data by matching the character field. If a match is not found, derive a reasonable value from the character's English meaning. Output a single markdown table with columns: | Character | Formula | Pinyin | English Meaning | German Translation | Natural Insight |. No preamble, table only.")
+WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.1, FORMAT markdown;

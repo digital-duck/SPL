@@ -1,13 +1,17 @@
 """SPL Executor: execute optimized plans against LLM backends."""
 
 from __future__ import annotations
+import asyncio
 import hashlib
+import logging
 import time
 from dataclasses import dataclass, field
 
+_log = logging.getLogger("spl.executor")
+
 from spl.ast_nodes import (
     PromptStatement, SelectItem, SystemRoleCall, ContextRef,
-    RagQuery, MemoryGet, Identifier,
+    RagQuery, MemoryGet, Identifier, Literal,
 )
 from spl.optimizer import ExecutionPlan, ExecutionStep
 from spl.adapters import get_adapter
@@ -45,10 +49,12 @@ class Executor:
         adapter: LLMAdapter | None = None,
         storage_dir: str = ".spl",
         vector_backend: str = "faiss",
+        cache_enabled: bool = False,
     ):
         self.adapter = adapter or get_adapter(adapter_name)
         self.memory = MemoryStore(f"{storage_dir}/memory.db")
         self.functions = FunctionRegistry()
+        self.cache_enabled = cache_enabled
 
         # Vector store is optional (only needed if RAG queries exist)
         self._vector_store: VectorStore | None = None
@@ -73,7 +79,20 @@ class Executor:
         context_parts: dict[str, str] = {}
         system_prompt = None
 
-        # Step 1: Gather context for each step
+        # Step 1a: Execute CTE sub-prompts in parallel (before regular context gathering)
+        cte_steps = [s for s in plan.steps if s.operation == "cte" and s.cte_stmt is not None]
+        if cte_steps:
+            _log.info("[%s] dispatching %d CTE(s) in parallel: %s",
+                      plan.prompt_name, len(cte_steps),
+                      ", ".join(s.alias for s in cte_steps))
+            cte_tasks = [self._execute_cte_step(s, params) for s in cte_steps]
+            cte_results = await asyncio.gather(*cte_tasks)
+            for step, result_text in zip(cte_steps, cte_results):
+                context_parts[step.alias] = result_text
+                _log.info("[%s] CTE '%s' completed (%d chars)",
+                          plan.prompt_name, step.alias, len(result_text))
+
+        # Step 1b: Gather context for each non-CTE step
         for step in plan.steps:
             if step.operation == "system_role":
                 # Extract system prompt from the original statement
@@ -84,7 +103,7 @@ class Executor:
                 context_parts[step.alias] = self._resolve_rag(step, stmt)
             elif step.operation == "memory_get":
                 context_parts[step.alias] = self._resolve_memory(step)
-            elif step.operation == "cte":
+            elif step.operation == "cte" and step.alias not in context_parts:
                 context_parts[step.alias] = self._resolve_cte(step, context_parts)
 
         # Step 2: Apply token limits (truncation)
@@ -99,25 +118,30 @@ class Executor:
 
         # Step 3: Assemble the full prompt
         prompt = self._assemble_prompt(context_parts, plan, stmt)
+        _log.info("[%s] assembled prompt  model=%s  budget=%d tokens",
+                  plan.prompt_name, plan.model or "default", plan.output_budget)
+        _log.debug("[%s] prompt text:\n%s", plan.prompt_name, prompt)
 
-        # Step 4: Check cache
+        # Step 4: Check cache (only when cache_enabled=True)
         prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:16]
-        cached = self.memory.cache_get(prompt_hash)
-        if cached:
-            latency = (time.perf_counter() - start) * 1000
-            return SPLResult(
-                content=cached,
-                model=plan.model or "cached",
-                input_tokens=0,
-                output_tokens=counter.count(cached),
-                total_tokens=counter.count(cached),
-                latency_ms=latency,
-                cost_usd=0.0,
-                plan=plan,
-                context_used=context_parts,
-            )
+        if self.cache_enabled:
+            cached = self.memory.cache_get(prompt_hash)
+            if cached:
+                latency = (time.perf_counter() - start) * 1000
+                return SPLResult(
+                    content=cached,
+                    model=plan.model or "cached",
+                    input_tokens=0,
+                    output_tokens=counter.count(cached),
+                    total_tokens=counter.count(cached),
+                    latency_ms=latency,
+                    cost_usd=0.0,
+                    plan=plan,
+                    context_used=context_parts,
+                )
 
         # Step 5: Call LLM
+        _log.info("[%s] calling LLM ...", plan.prompt_name)
         gen_result = await self.adapter.generate(
             prompt=prompt,
             model=plan.model or "",
@@ -127,13 +151,19 @@ class Executor:
         )
 
         latency = (time.perf_counter() - start) * 1000
+        _log.info("[%s] LLM response  model=%s  tokens=%d+%d=%d  latency=%.0fms",
+                  plan.prompt_name, gen_result.model,
+                  gen_result.input_tokens, gen_result.output_tokens,
+                  gen_result.total_tokens, latency)
+        _log.debug("[%s] response text:\n%s", plan.prompt_name, gen_result.content)
 
         # Step 6: Store result if STORE clause exists
         if stmt and stmt.store_clause:
             self.memory.set(stmt.store_clause.key, gen_result.content)
 
-        # Step 7: Cache result
-        self.memory.cache_set(prompt_hash, gen_result.content, plan.model or "")
+        # Step 7: Cache result (only when cache_enabled=True)
+        if self.cache_enabled:
+            self.memory.cache_set(prompt_hash, gen_result.content, plan.model or "")
 
         return SPLResult(
             content=gen_result.content,
@@ -201,6 +231,20 @@ class Executor:
         """Resolve CTE - already computed context."""
         return context.get(step.alias, f"[CTE '{step.alias}' not resolved]")
 
+    async def _execute_cte_step(self, step: ExecutionStep, params: dict[str, str]) -> str:
+        """Execute a CTE's nested PROMPT as a sub-query and return the result text."""
+        from spl.optimizer import Optimizer
+        cte_stmt = step.cte_stmt
+        if cte_stmt is None:
+            return f"[CTE '{step.alias}' has no nested PROMPT]"
+        assert isinstance(cte_stmt, PromptStatement)
+        _log.info("[CTE:%s] starting  model=%s", step.alias, cte_stmt.model or "default")
+        sub_plan = Optimizer().optimize_single(cte_stmt)
+        result = await self.execute(sub_plan, params=params, stmt=cte_stmt)
+        _log.info("[CTE:%s] done  tokens=%d  latency=%.0fms",
+                  step.alias, result.total_tokens, result.latency_ms)
+        return result.content
+
     def _assemble_prompt(
         self,
         context: dict[str, str],
@@ -217,14 +261,49 @@ class Executor:
         # Add generate instruction
         if stmt and stmt.generate_clause:
             gen = stmt.generate_clause
-            args_str = ", ".join(
-                a.name if isinstance(a, Identifier) else str(a)
-                for a in gen.arguments
-            )
-            parts.append(
-                f"\n## Task\n"
-                f"Based on the above context, generate: {gen.function_name}({args_str})"
-            )
+
+            # Check for a user-defined function body
+            func_def = self.functions.get(gen.function_name)
+            if func_def:
+                # Build param -> value mapping from GENERATE arguments
+                arg_values: dict[str, str] = {}
+                for param, arg in zip(func_def.parameters, gen.arguments):
+                    if isinstance(arg, Identifier):
+                        arg_values[param.name] = context.get(arg.name, "")
+                    elif isinstance(arg, Literal):
+                        arg_values[param.name] = str(arg.value)
+                    else:
+                        arg_values[param.name] = str(arg)
+                # Substitute {param} placeholders in function body
+                task_text = func_def.body
+                for key, val in arg_values.items():
+                    task_text = task_text.replace("{" + key + "}", val)
+                parts.append(f"\n## Task\n{task_text}")
+
+            else:
+                # Look for a string literal argument as the instruction
+                instruction = None
+                for arg in gen.arguments:
+                    if isinstance(arg, Literal) and arg.literal_type == "string":
+                        instruction = str(arg.value)
+                        break
+
+                if instruction:
+                    # Substitute {alias} placeholders with context values
+                    for alias_key, val in context.items():
+                        instruction = instruction.replace("{" + alias_key + "}", val)
+                    parts.append(f"\n## Task\n{instruction}")
+                else:
+                    # Fallback: generic function call description
+                    args_str = ", ".join(
+                        a.name if isinstance(a, Identifier) else str(a)
+                        for a in gen.arguments
+                    )
+                    parts.append(
+                        f"\n## Task\n"
+                        f"Based on the above context, generate: {gen.function_name}({args_str})"
+                    )
+
             if gen.output_format:
                 parts.append(f"Output format: {gen.output_format}")
 

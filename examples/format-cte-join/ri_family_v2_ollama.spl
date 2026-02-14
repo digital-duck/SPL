@@ -1,0 +1,75 @@
+-- ============================================================
+-- ri_family_v2_ollama.spl
+-- 日 Family Character Table — all-Ollama variant
+--
+-- All models run locally via Ollama (zero API cost).
+-- Required models:
+--   ollama pull qwen2.5       (CJK characters + synthesis)
+--   ollama pull mistral       (German translation)
+--   ollama pull llama3.1:latest   (cultural insights)
+--
+-- NOTE: Use qwen2.5 (not qwen3) for CTE tasks.
+-- qwen3 is a thinking/reasoning model — its <think> chain-of-thought
+-- blocks consume the entire output budget before any JSON is written.
+-- qwen2.5 outputs clean structured JSON directly.
+--
+-- Run:
+--   spl execute examples/format-cte-join/ri_family_v2_ollama.spl \
+--       --adapter ollama --param radical="日" --log
+-- ============================================================
+
+PROMPT ri_family_table
+WITH BUDGET 8000 tokens
+USING MODEL "qwen2.5"
+
+WITH characters AS (
+    PROMPT list_ri_characters
+    WITH BUDGET 2000 tokens
+    USING MODEL "qwen2.5"
+
+    SELECT
+        system_role("You are an expert in Chinese character composition and pinyin romanization. Output ONLY raw JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        list_characters_with_pinyin(radical, "List the 10 most common Chinese characters containing the radical {radical} taught in Chinese primary school. Output ONLY a raw JSON array. Each element must be an object exactly like this example: {\"character\":\"明\",\"formula\":\"日+月=明\",\"pinyin\":\"míng\",\"english_meaning\":\"bright\"}. No markdown, no arrays-of-arrays, no extra text.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+german AS (
+    PROMPT translate_to_german
+    WITH BUDGET 2000 tokens
+    USING MODEL "mistral"
+
+    SELECT
+        system_role("You are a German linguist. Output ONLY raw JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        german_translations(radical, "List the 10 most common Chinese characters containing the radical {radical} taught in Chinese primary school. Output ONLY a raw JSON array. Each element must be an object exactly like this example: {\"character\":\"明\",\"german_word\":\"hell\",\"german_explanation\":\"Sonne und Mond zusammen bedeuten Helligkeit\"}. No markdown, no extra text.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+insights AS (
+    PROMPT natural_insights
+    WITH BUDGET 2000 tokens
+    USING MODEL "llama3.1:latest"
+
+    SELECT
+        system_role("You are an expert in Chinese etymology and cultural history. Output ONLY raw JSON, no markdown fences, no extra text."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        cultural_insights(radical, "List the 10 most common Chinese characters containing the radical {radical} taught in Chinese primary school. Each must be a single Chinese character (not a word or phrase). Output ONLY a raw JSON array. Each element must be an object exactly like this example: {\"character\":\"明\",\"natural_insight\":\"Sun and moon together represent the brightest light\"}. No markdown, no compound words, no extra text.")
+    WITH OUTPUT BUDGET 1000 tokens, TEMPERATURE 0.2, FORMAT json
+)
+
+SELECT
+    system_role("You are an expert at composing multilingual scholarly tables from structured JSON data. Produce clean, accurate markdown."),
+    context.characters AS char_data LIMIT 2000 tokens,
+    context.german AS german_data LIMIT 2000 tokens,
+    context.insights AS insight_data LIMIT 2000 tokens
+
+GENERATE
+    compose_table(char_data, german_data, insight_data, "Use char_data as the master list of exactly 10 characters. For each character in char_data, look up its German translation in german_data and its cultural insight in insight_data by matching the character field. If a match is not found, derive a reasonable value from the character's English meaning. Output a single markdown table with columns: | Character | Formula | Pinyin | English Meaning | German Translation | Natural Insight |. No preamble, table only.")
+WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.1, FORMAT markdown;

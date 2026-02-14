@@ -156,6 +156,7 @@ class CTEClause:
     from_clause: FromClause | None = None
     where_clause: WhereClause | None = None
     limit_tokens: int | None = None
+    nested_prompt: PromptStatement | None = None  # Set when CTE body is a full PROMPT
 
 
 # === Top-Level Statements ===

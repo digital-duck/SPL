@@ -40,7 +40,7 @@ class OpenRouterAdapter(LLMAdapter):
         api_key: str | None = None,
         base_url: str = OPENROUTER_API_URL,
         default_model: str = "anthropic/claude-sonnet-4-5",
-        timeout: int = 120,
+        timeout: int = 180,
     ):
         if httpx is None:
             raise ImportError("httpx is required for OpenRouter adapter: pip install httpx")

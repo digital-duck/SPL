@@ -23,6 +23,7 @@ class ExecutionStep:
     compression_ratio: float = 1.0
     cache_status: str = "n/a"  # "hit", "miss", "n/a"
     priority: int = 0   # Lower = execute first
+    cte_stmt: object = None  # PromptStatement for CTE nested PROMPT execution
 
 
 @dataclass
@@ -79,6 +80,7 @@ class Optimizer:
                 limit_tokens=cte.limit_tokens,
                 allocated_tokens=cte.limit_tokens or 500,
                 priority=1,
+                cte_stmt=cte.nested_prompt,
             )
             plan.steps.append(step)
 

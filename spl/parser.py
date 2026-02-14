@@ -157,6 +157,12 @@ class Parser:
         self._expect(TokenType.AS)
         self._expect(TokenType.LPAREN)
 
+        # CTE body can be either a nested PROMPT statement or a SELECT clause
+        if self._check(TokenType.PROMPT):
+            nested_prompt = self._parse_inner_prompt()
+            self._expect(TokenType.RPAREN)
+            return CTEClause(name=name, nested_prompt=nested_prompt)
+
         select_items = self._parse_select_clause()
 
         from_clause = None
@@ -181,6 +187,42 @@ class Parser:
             from_clause=from_clause,
             where_clause=where_clause,
             limit_tokens=limit_tokens,
+        )
+
+    def _parse_inner_prompt(self) -> PromptStatement:
+        """Parse a PROMPT statement nested inside a CTE definition."""
+        self._expect(TokenType.PROMPT)
+        name = self._expect(TokenType.IDENTIFIER).value
+
+        budget = None
+        model = None
+
+        if self._check(TokenType.WITH) and self._peek_is(TokenType.BUDGET):
+            self._advance()  # WITH
+            self._advance()  # BUDGET
+            budget = int(self._expect(TokenType.INTEGER).value)
+            self._expect(TokenType.TOKENS)
+
+        if self._check(TokenType.USING):
+            self._advance()
+            self._expect(TokenType.MODEL)
+            if self._check(TokenType.STRING):
+                model = self._advance().value
+            else:
+                model = self._read_model_name()
+
+        select_items = self._parse_select_clause()
+
+        generate_clause = None
+        if self._check(TokenType.GENERATE):
+            generate_clause = self._parse_generate_clause()
+
+        return PromptStatement(
+            name=name,
+            budget=budget,
+            model=model,
+            select_items=select_items,
+            generate_clause=generate_clause,
         )
 
     # === SELECT Clause ===

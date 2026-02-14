@@ -1,0 +1,40 @@
+<pre>  ---                                                                                                                   
+  <b>1. Ollama (local, zero cost)</b>                                                                                          
+                                                                                                                        
+  spl execute examples/format-cte-join/ri_family_v2_ollama.spl \                                                        
+      --adapter ollama --param radical=<font color="#C01C28">&quot;日&quot;</font> --<font color="#2AA1B3">log</font>                                                                       
+  Prerequisite: <font color="#B1B9F9">ollama serve</font> + <font color="#B1B9F9">ollama pull qwen2.5 mistral llama3.1:8b</font>                                                  
+                                                                                                                        
+  <b>2. OpenRouter</b>                                                                                                         
+                                                                                                                        
+  <font color="#2AA1B3">export</font> OPENROUTER_API_KEY=&lt;your-key&gt;                                                                                  
+  spl execute examples/format-cte-join/ri_family_v2_openrouter.spl \                                                    
+      --adapter openrouter --param radical=<font color="#C01C28">&quot;日&quot;</font> --<font color="#2AA1B3">log</font>                                                                   
+                                                                                                                        
+  <b>3. Claude CLI (local subscription, zero marginal cost)</b>                                                                
+                                                                                                                        
+  spl execute examples/format-cte-join/ri_family_v2.spl \                                                               
+      --adapter claude_cli --param radical=<font color="#C01C28">&quot;日&quot;</font> --<font color="#2AA1B3">log</font>                                                                   
+  The existing <font color="#B1B9F9">ri_family_v2.spl</font> works as-is — <font color="#B1B9F9">claude_cli</font> ignores the <font color="#B1B9F9">USING MODEL</font> names and routes everything through    
+  Claude.                                                                                                               
+                                                                                                                        
+  ---                                                                                                                   
+  <b>Log files</b> are written to:                                                                                             
+  /home/papagame/projects/digital-duck/SPL/logs/ri_family_v2-20260214-153000.log                                        
+                                                                                                                        
+  Each log includes: adapter, params, per-prompt completion with model/tokens/latency/cost, full content, and total     
+  pipeline time. <font color="#B1B9F9">--log</font> is opt-in so normal runs stay quiet.                                                             
+                                                                                                                        
+  <b>File summary:</b>                                                                                                         
+  <b>File:</b> <font color="#B1B9F9">ri_family_v2.spl</font>                                                                                                
+  <b>Synthesis model:</b> <font color="#B1B9F9">anthropic/claude-sonnet-4-5</font>                                                                          
+  <b>CTE models:</b> <font color="#B1B9F9">qwen2.5</font>, <font color="#B1B9F9">mistral</font>, <font color="#B1B9F9">llama3.1:8b</font>                                                                             
+  ────────────────────────────────────────                                                                              
+  <b>File:</b> <font color="#B1B9F9">ri_family_v2_ollama.spl</font>                                                                                         
+  <b>Synthesis model:</b> <font color="#B1B9F9">qwen2.5</font>                                                                                              
+  <b>CTE models:</b> <font color="#B1B9F9">qwen2.5</font>, <font color="#B1B9F9">mistral</font>, <font color="#B1B9F9">llama3.1:8b</font>                                                                             
+  ────────────────────────────────────────                                                                              
+  <b>File:</b> <font color="#B1B9F9">ri_family_v2_openrouter.spl</font>                                                                                     
+  <b>Synthesis model:</b> <font color="#B1B9F9">anthropic/claude-sonnet-4-5</font>                                                                          
+  <b>CTE models:</b> <font color="#B1B9F9">qwen/qwen-2.5-72b-instruct</font>, <font color="#B1B9F9">mistralai/mistral-7b-instruct</font>, <font color="#B1B9F9">meta-llama/llama-3.1-8b-instruct</font>               
+                                                                                                            </pre>

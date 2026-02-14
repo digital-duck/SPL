@@ -1,0 +1,78 @@
+-- ============================================================
+-- ri_family_v2.spl
+-- 日 (rì) Family Character Table — Multi-model CTE, v0.2 target
+--
+-- Status: Target for SPL v0.2 (parallel async CTE execution).
+--
+-- Vision: Each CTE dispatched to the best model for its task.
+--   Step 1 (Chinese linguistics)  → qwen2.5       (strong CJK)
+--   Step 2 (German translation)   → mistral        (strong EU langs)
+--   Step 3 (Natural insight)      → llama3.1:8b    (encyclopedic)
+--   Step 4 (Composition)          → claude-sonnet  (synthesis)
+--   Steps 1-3 execute in PARALLEL (independent CTEs).
+--   Step 4 waits for all three, then composes.
+--
+-- Model IDs:
+--   Ollama:      qwen2.5, mistral, llama3.1:8b
+--   OpenRouter:  qwen/qwen-2.5-72b-instruct, mistralai/mistral-7b-instruct,
+--                meta-llama/llama-3.1-8b-instruct, anthropic/claude-sonnet-4-5
+--
+-- Run (once v0.2 executor is ready):
+--   spl execute examples/format-cte-join/ri_family_v2.spl --param radical="日"
+-- ============================================================
+
+PROMPT ri_family_table
+WITH BUDGET 8000 tokens
+USING MODEL "anthropic/claude-sonnet-4-5"
+
+WITH characters AS (
+    PROMPT list_ri_characters
+    WITH BUDGET 2000 tokens
+    USING MODEL "qwen2.5"
+
+    SELECT
+        system_role("You are an expert in Chinese character composition and pinyin romanization."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        list_characters_with_pinyin(radical, "List exactly 10 Chinese characters containing the radical {radical}. For each: character, compositional formula (e.g. sun+moon=bright), pinyin with tones, English meaning. Output as a JSON array of objects with keys: character, formula, pinyin, english_meaning.")
+    WITH OUTPUT BUDGET 600 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+german AS (
+    PROMPT translate_to_german
+    WITH BUDGET 2000 tokens
+    USING MODEL "mistral"
+
+    SELECT
+        system_role("You are a professional German linguist and translator specializing in East Asian concepts."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        german_translations(radical, "List the 10 most common Chinese characters that contain the radical {radical} and are taught in Chinese primary school. For each character provide its German translation. Output as a JSON array with keys: character, german_word, german_explanation.")
+    WITH OUTPUT BUDGET 600 tokens, TEMPERATURE 0.1, FORMAT json
+),
+
+insights AS (
+    PROMPT natural_insights
+    WITH BUDGET 2000 tokens
+    USING MODEL "llama3.1:8b"
+
+    SELECT
+        system_role("You are an expert in ancient Chinese natural philosophy, oracle bone script, and cultural etymology."),
+        context.radical AS radical LIMIT 20 tokens
+
+    GENERATE
+        cultural_insights(radical, "List the 10 most common Chinese characters that contain the radical {radical} and are taught in Chinese primary school. For each character explain the natural or cultural observation it encodes. Output as a JSON array with keys: character, natural_insight.")
+    WITH OUTPUT BUDGET 600 tokens, TEMPERATURE 0.3, FORMAT json
+)
+
+SELECT
+    system_role("You are an expert at composing multilingual scholarly tables from structured JSON data. Produce clean, accurate markdown."),
+    context.characters AS char_data LIMIT 1500 tokens,
+    context.german AS german_data LIMIT 1500 tokens,
+    context.insights AS insight_data LIMIT 1500 tokens
+
+GENERATE
+    compose_table(char_data, german_data, insight_data, "Use char_data as the master list of exactly 10 characters. For each character in char_data, look up its German translation in german_data and its cultural insight in insight_data by matching the character field. If a match is not found, derive a reasonable value from the character's English meaning. Output a single markdown table with columns: | Character | Formula | Pinyin | English Meaning | German Translation | Natural Insight |. No preamble, table only.")
+WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.1, FORMAT markdown;

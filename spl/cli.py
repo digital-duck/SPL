@@ -4,7 +4,7 @@ Usage:
     spl init                          Initialize .spl/ directory
     spl validate <file.spl>          Parse + validate (no execution)
     spl explain <file.spl>           Show execution plan
-    spl execute <file.spl> [opts]    Execute a query
+    spl execute <file.spl> [--param k=v] [--adapter name] [--cache] [--no-log] Execute a query
     spl memory list                   List memory keys
     spl memory get <key>              Get memory value
     spl memory set <key> <value>      Set memory value
@@ -15,8 +15,12 @@ Usage:
 from __future__ import annotations
 import asyncio
 import json
+import logging
 import os
 import sys
+import time
+from datetime import datetime
+from pathlib import Path
 
 try:
     import yaml
@@ -63,7 +67,7 @@ Usage:
     spl init                              Initialize .spl/ directory
     spl validate <file.spl>              Validate SPL syntax
     spl explain <file.spl>               Show execution plan
-    spl execute <file.spl> [--param k=v] Execute query
+    spl execute <file.spl> [--param k=v] [--adapter <name>] [--cache] [--no-log] Execute query
     spl memory list                       List memory keys
     spl memory get <key>                  Get value
     spl memory set <key> <value>          Set value
@@ -189,15 +193,97 @@ def _cmd_explain(args: list[str]):
         sys.exit(1)
 
 
+_LOG_LEVELS = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
+
+
+def _setup_logger(spl_filepath: str, adapter_name: str, log_level: str) -> logging.Logger:
+    """Create a file logger: <script>-<adapter>-<datetime>.log under the SPL logs dir."""
+    log_dir = Path("/home/papagame/projects/digital-duck/SPL/logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    script_stem = Path(spl_filepath).stem          # e.g. "ri_family_v2"
+    dt_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_path = log_dir / f"{script_stem}-{adapter_name}-{dt_str}.log"
+
+    level = _LOG_LEVELS.get(log_level.lower(), logging.INFO)
+
+    # Attach handler to the root "spl" logger so spl.executor logs also flow here
+    spl_logger = logging.getLogger("spl")
+    spl_logger.setLevel(logging.DEBUG)   # capture everything; handler filters
+
+    # Remove stale handlers from previous runs in the same process
+    spl_logger.handlers = [h for h in spl_logger.handlers
+                           if not isinstance(h, logging.FileHandler)]
+
+    fh = logging.FileHandler(log_path, encoding="utf-8")
+    fh.setLevel(level)
+    fh.setFormatter(logging.Formatter("%(asctime)s  %(levelname)-7s  %(name)s  %(message)s",
+                                      datefmt="%H:%M:%S"))
+    spl_logger.addHandler(fh)
+
+    print(f"Logging to: {log_path}  (level={log_level})")
+    return spl_logger
+
+
+def _log(logger: logging.Logger | None, level: str, msg: str) -> None:
+    if logger is None:
+        return
+    getattr(logger, level)(msg)
+
+
 def _cmd_execute(args: list[str]):
-    """Execute SPL query."""
+    """Execute SPL query.
+
+    Flags:
+      --adapter <name>     LLM adapter: claude_cli (default), openrouter, ollama
+      --cache              Enable SQLite result cache
+      --no-log             Disable execution log (logging is on by default)
+      --log-level <level>  Log verbosity: debug | info (default) | warning
+    """
     if not args:
-        print("Usage: spl execute <file.spl> [--param key=value ...]")
+        print("Usage: spl execute <file.spl> [--param key=value ...] "
+              "[--adapter name] [--cache] [--no-log] [--log-level debug|info|warning]")
         sys.exit(1)
+
+    # Extract flags
+    cache_enabled = "--cache"   in args
+    log_enabled   = "--no-log" not in args
+    args = [a for a in args if a not in ("--cache", "--no-log")]
+
+    # Extract --adapter <name>
+    adapter_name = "claude_cli"
+    if "--adapter" in args:
+        idx = args.index("--adapter")
+        if idx + 1 < len(args):
+            adapter_name = args[idx + 1]
+            args = args[:idx] + args[idx + 2:]
+        else:
+            print("Error: --adapter requires a value (claude_cli | openrouter | ollama)")
+            sys.exit(1)
+
+    # Extract --log-level <level>
+    log_level = "debug"
+    if "--log-level" in args:
+        idx = args.index("--log-level")
+        if idx + 1 < len(args):
+            log_level = args[idx + 1].lower()
+            args = args[:idx] + args[idx + 2:]
+        else:
+            print("Error: --log-level requires a value (debug | info | warning)")
+            sys.exit(1)
 
     filepath = args[0]
     params = _parse_params(args[1:])
     source = _read_file(filepath)
+
+    logger = _setup_logger(filepath, adapter_name, log_level) if log_enabled else None
+
+    _log(logger, "info",  f"script  : {filepath}")
+    _log(logger, "info",  f"adapter : {adapter_name}")
+    _log(logger, "info",  f"cache   : {cache_enabled}")
+    _log(logger, "info",  f"params  : {params}")
+
+    t_total_start = time.perf_counter()
 
     try:
         from spl.lexer import Lexer
@@ -205,7 +291,7 @@ def _cmd_execute(args: list[str]):
         from spl.analyzer import Analyzer
         from spl.optimizer import Optimizer
         from spl.executor import Executor
-        from spl.ast_nodes import PromptStatement
+        from spl.ast_nodes import PromptStatement, CreateFunctionStatement
 
         lexer = Lexer(source)
         tokens = lexer.tokenize()
@@ -217,20 +303,37 @@ def _cmd_execute(args: list[str]):
         plans = optimizer.optimize(analysis)
 
         if not plans:
-            print("No PROMPT statements to execute.")
+            msg = "No PROMPT statements to execute."
+            print(msg)
+            _log(logger, "warning", msg)
             return
 
-        executor = Executor()
+        executor = Executor(adapter_name=adapter_name, cache_enabled=cache_enabled)
+
+        # Register any CREATE FUNCTION definitions
+        for s in ast.statements:
+            if isinstance(s, CreateFunctionStatement):
+                executor.functions.register(s)
+                _log(logger, "info", f"registered function: {s.name}")
 
         for plan in plans:
-            # Find the matching statement
             stmt = None
             for s in ast.statements:
                 if isinstance(s, PromptStatement) and s.name == plan.prompt_name:
                     stmt = s
                     break
 
+            _log(logger, "info", f"executing prompt: {plan.prompt_name}")
             result = asyncio.run(executor.execute(plan, params=params, stmt=stmt))
+
+            summary = (
+                f"model={result.model}  "
+                f"tokens={result.input_tokens}+{result.output_tokens}={result.total_tokens}  "
+                f"latency={result.latency_ms:.0f}ms"
+                + (f"  cost=${result.cost_usd:.5f}" if result.cost_usd else "")
+            )
+            _log(logger, "info",  f"completed: {plan.prompt_name}  {summary}")
+            _log(logger, "debug", f"content:\n{result.content}")
 
             print(f"--- {plan.prompt_name} ---")
             print(result.content)
@@ -242,8 +345,13 @@ def _cmd_execute(args: list[str]):
 
         executor.close()
 
+        total_s = time.perf_counter() - t_total_start
+        _log(logger, "info", f"pipeline finished  total={total_s:.2f}s")
+
     except Exception as e:
-        print(f"ERROR: {e}")
+        msg = f"{type(e).__name__}: {e}" if str(e) else type(e).__name__
+        _log(logger, "error", f"FAILED: {msg}")
+        print(f"ERROR: {msg}")
         sys.exit(1)
 
 

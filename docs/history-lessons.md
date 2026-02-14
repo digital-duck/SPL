@@ -146,5 +146,70 @@ If the SQL-to-SPL parallel holds, several predictions follow:
 
 ---
 
-*This document is part of the SPL project's Human+AI co-creation documentation.*
-*Author: Wen Gong + Claude Opus 4.6 | February 12, 2026*
+---
+
+## The human×AI Discovery Process
+
+### Why "×" Is the Right Operator
+
+Three ways to describe the relationship between human and AI in research:
+
+- `human - AI` — subtraction, adversarial. Wrong.
+- `human + AI` — addition, two separate contributions that sum. Incomplete.
+- `human × AI` — multiplication, each factor amplifies the other. Correct.
+
+The multiplicative framing is precise, not metaphorical. If human insight = 0, the product = 0: AI without direction produces noise. If AI capability = 0, the product = 0: the human is bounded by their own bandwidth. Improving either factor *multiplies* total output. This captures something the additive model misses: the combination is qualitatively different from either factor alone, not just quantitatively larger.
+
+But there is a deeper reason why `×` is the right operator. Discovery is not a deterministic process — it is a **combinatorial, trial-and-error search across a vast space of possibilities**. The `×` operator captures the exploratory, iterative nature of that search.
+
+### Edison's Filament: The Combinatorial Search Principle
+
+Thomas Edison's search for the perfect light bulb filament is a foundational example. He did not derive the answer analytically. He tested thousands of materials — carbonized bamboo, platinum, cotton thread, tungsten — systematically narrowing the search space through experiment. The "invention" was an exhaustive exploration of a combinatorial space, guided by human intuition about which regions were more promising.
+
+The `×` in `human×Edison's-experiments` works because:
+- Edison provided the *direction* of the search (energy, constraints, evaluation criteria)
+- The experiments provided *coverage* of the solution space
+- Neither alone produces the incandescent bulb — you need both the judgment and the search
+
+This is precisely the structure of `human×AI` in discovery: the human provides intuition, domain expertise, and problem framing; the AI provides coverage of the combinatorial space — implementation paths, proof steps, parameter sweeps — that no individual could traverse alone.
+
+### Drug Discovery: Three Eras of Search
+
+Drug discovery illustrates how the *scale* of combinatorial search has evolved across eras:
+
+| Era | Search Medium | Space Explored |
+|-----|--------------|---------------|
+| **Lab bench** (pre-1980s) | Physical synthesis and biological assay | ~10³ compounds per campaign |
+| **Simulation** (1990s–2010s) | Molecular dynamics, docking simulations | ~10⁶ compounds in silico |
+| **AI lab** (2020s–present) | Generative models + virtual screening | ~10⁹–10¹² candidate structures |
+
+In each era, the human role shifted — from hands-on chemist, to computational biologist, to ML-guided researcher — but the *role of human judgment* in guiding the search did not diminish. It was amplified. More of the combinatorial work was handled by the tool; more of the strategic work returned to the human. Each transition is `human × (new tool)`, not `human + (new tool)`.
+
+The AI lab is not the end of this sequence. It is the latest expansion of the search space that human judgment can navigate.
+
+### The SPL Genesis: A concrete example
+
+SPL was not designed top-down. It emerged from a `human×AI` search in real time:
+
+- **Thursday morning, meditation**: The insight surfaced — "the LLM context window is a constrained resource, just like disk I/O was for databases. Where is the declarative query language?" This connection required 20+ years of Oracle/SQL experience and current LLM engineering work coexisting in one mind. No AI would have generated this framing unprompted.
+
+- **Thursday morning, first prompt**: The insight was articulated to Claude. It "clicked" immediately — because the structural parallel (token budget = query optimization, SELECT+GENERATE = retrieval+synthesis) is precise and implementable. Within one hour, with a few rounds of feedback, a working prototype existed: lexer, parser, optimizer, executor, CLI.
+
+- **Thursday evening**: The arxiv paper draft was complete.
+
+From meditation to paper draft in one day. Neither alone: the human had the insight but not the implementation time. The AI had the implementation capability but not the insight. The connection was established by the product of both.
+
+### The Provenance Principle
+
+In the vast space of human problems and solutions, a dot can be placed by a human or by an AI. What matters is that the dots are connected and the path is established. The universe does not care about provenance — a theorem is true or false regardless of who found the proof; a useful abstraction works or doesn't regardless of who articulated it.
+
+This is not a new principle. Darwin and Wallace arrived at natural selection independently. The calculus priority dispute between Newton and Leibniz looks petty in retrospect — what survived is the idea. Many of the most important connections in science were made simultaneously by multiple people when the conditions were right.
+
+What is new is the *speed* at which `human×AI` can traverse the problem-solution space. The Edison search that took years can now happen in days. The drug discovery campaign that took a decade can now be explored in silico in months. SPL went from idea to working prototype to paper in hours.
+
+The practical implication: **worry less about who places the dot, more about whether the dots connect.** The accountability question (tracing which actor placed which dot) matters for debugging and correction — but it is an engineering concern, not a philosophical one about the value of discovery.
+
+---
+
+*This document is part of the SPL project's human×AI co-creation documentation.*
+*Author: Wen Gong | AI partner: Claude | February 2026*

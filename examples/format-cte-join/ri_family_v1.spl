@@ -1,0 +1,25 @@
+-- ============================================================
+-- ri_family_v1.spl
+-- 日 (rì) Family Character Table — Single PROMPT, v0.1.0
+--
+-- Status: WORKING in SPL v0.1.0
+-- Approach: Single PROMPT with inline GENERATE instruction.
+--   All sub-tasks (character selection, pinyin, etymology,
+--   multilingual explanation) handled by one LLM call.
+--
+-- Run:
+--   spl execute examples/format-cte-join/ri_family_v1.spl \
+--       --param radical="日"
+-- ============================================================
+
+PROMPT ri_family_table
+WITH BUDGET 6000 tokens
+USING MODEL "qwen2.5"
+
+SELECT
+    system_role("You are an expert in Chinese etymology, character composition, pinyin romanization, and multilingual translation (Chinese, English, German). Be precise, scholarly, and culturally accurate."),
+    context.radical AS radical LIMIT 20 tokens
+
+GENERATE
+    ri_table(radical, "Generate a markdown table of exactly 10 Chinese characters that contain the radical {radical}. Include exactly these columns: | Character | Formula | Pinyin | English Meaning | Chinese Explanation | German Translation | Natural Insight |. For each row provide: the composite Chinese character, its compositional formula (e.g. sun+moon=bright), accurate pinyin with tones, concise English meaning, brief Chinese compositional explanation, accurate German translation, and the natural or cultural observation encoded in the character. Output only the markdown table with no preamble and no commentary.")
+WITH OUTPUT BUDGET 3000 tokens, TEMPERATURE 0.2, FORMAT markdown;
