@@ -53,7 +53,7 @@ The core insight is treating LLMs as **generative knowledge bases** --- not just
 I bring 20+ years of Oracle/SQL experience to this --- from nuclear physics, to CRM engineering, to database application development at Oracle, to AWS cloud, to AI engineering. SPL is essentially codifying everything I've learned about declarative query optimization and applying it to the LLM context window problem.
 
 **The deliverables:**
-1. Working Python package: `pip install spl-lang` (prototype with hand-written recursive descent parser, zero external parser dependencies)
+1. Working Python package: `pip install spl-llm` (prototype with hand-written recursive descent parser, zero external parser dependencies)
 2. arxiv paper (the one I'd like you to review)
 3. Human+AI co-creation documentation (the prototype was built collaboratively with Claude in a single session)
 

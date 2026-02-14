@@ -20,7 +20,7 @@ The file should include:
 ## Project overview
 - One-line description: SPL is a declarative SQL-inspired query language for LLM context management
 - Author: Wen Gong
-- Package name: spl-lang (v0.1.0)
+- Package name: spl-llm (v0.1.0)
 - Python >=3.10
 
 ## Build and install

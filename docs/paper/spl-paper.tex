@@ -157,7 +157,7 @@ This paper makes the following contributions:
   \item \textbf{Language design}: We present the complete syntax and formal grammar (EBNF) of SPL, a declarative language for LLM context management with explicit token budgeting, composable CTEs, user-defined functions, and integrated RAG/memory.
   \item \textbf{Context-as-resource model}: We formalize the LLM context window as a constrained resource and present a token budget allocation algorithm analogous to query optimization in relational databases.
   \item \textbf{EXPLAIN mechanism}: We introduce transparent execution plans for LLM queries, enabling developers to inspect and reason about token allocation before execution.
-  \item \textbf{Reference implementation}: We provide a complete, pip-installable Python package (\texttt{spl-lang}) with a hand-written recursive descent parser, optimizer, and provider-agnostic execution engine.
+  \item \textbf{Reference implementation}: We provide a complete, pip-installable Python package (\texttt{spl-llm}) with a hand-written recursive descent parser, optimizer, and provider-agnostic execution engine.
   \item \textbf{Comparative analysis}: We systematically compare SPL against existing prompt management approaches (Prompty, DSPy, LMQL) across key dimensions.
 \end{enumerate}
 
@@ -1032,7 +1032,7 @@ For the millions of practitioners who think naturally in sets, schemas, and decl
 SPL offers a familiar on-ramp into the GenAI domain---one that preserves and extends their
 existing mental models rather than discarding them.
 
-The reference implementation is available as an open-source Python package (\texttt{pip install spl-lang}) at \url{https://github.com/digital-duck/SPL}.
+The reference implementation is available as an open-source Python package (\texttt{pip install spl-llm}) at \url{https://github.com/digital-duck/SPL}.
 
 % ============================================================
 % References

@@ -46,7 +46,7 @@ Paper: `spl-paper.tex` | Bib: `references.bib` | Figures: `figures/` | Data: `da
 ## After Submission
 
 ### Package Publishing
-- [ ] Register `spl-lang` on PyPI (test with TestPyPI first)
+- [ ] Register `spl-llm` on PyPI (test with TestPyPI first)
 - [ ] Add GitHub Actions CI (run tests on push)
 - [ ] Add badges to README (PyPI version, tests passing, license)
 - [ ] Create GitHub release v0.1.0

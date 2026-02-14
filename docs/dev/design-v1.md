@@ -346,7 +346,7 @@ Note: SQLite is Python stdlib (no extra dependency).
 
 ## 11. Deliverables
 
-1. **Python Package** (`pip install spl-lang`): Working SPL engine with CLI
+1. **Python Package** (`pip install spl-llm`): Working SPL engine with CLI
 2. **arxiv Paper**: "Structured Prompt Language: Declarative Context Management for Large Language Models"
 3. **Co-Creation Log**: Human+AI collaborative development documentation (`docs/dev/co-creation-log.md`)
 

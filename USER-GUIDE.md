@@ -35,10 +35,10 @@
 
 ```bash
 # Core install
-pip install spl-lang
+pip install spl-llm
 
 # With ChromaDB vector store support
-pip install "spl-lang[chroma]"
+pip install "spl-llm[chroma]"
 
 # Development install (from source)
 git clone https://github.com/digital-duck/SPL
@@ -337,7 +337,7 @@ spl rag query "search query" --top-k 3
 
 Files created: `.spl/vectors.faiss`, `.spl/vectors_meta.db`
 
-### ChromaDB (install: `pip install "spl-lang[chroma]"`)
+### ChromaDB (install: `pip install "spl-llm[chroma]"`)
 
 ```bash
 spl rag add document.txt --backend chroma

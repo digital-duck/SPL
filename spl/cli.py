@@ -48,7 +48,7 @@ def main():
         _cmd_rag(args[1:])
     elif command == "version":
         from spl import __version__
-        print(f"spl-lang {__version__}")
+        print(f"spl-llm {__version__}")
     else:
         print(f"Unknown command: {command}")
         _print_help()

@@ -34,10 +34,10 @@ WITH OUTPUT BUDGET 2000 tokens, TEMPERATURE 0.3;
 
 ```bash
 # Core install
-pip install spl-lang
+pip install spl-llm
 
 # With ChromaDB vector store support
-pip install "spl-lang[chroma]"
+pip install "spl-llm[chroma]"
 ```
 
 ### Zero-cost quick start with Ollama
@@ -51,7 +51,7 @@ ollama pull llama3.2        # 2 GB, great for most tasks
 ollama pull qwen2.5         # strong reasoning and code
 
 # 3. Install SPL and run
-pip install spl-lang
+pip install spl-llm
 spl init                    # creates .spl/config.yaml — set adapter: ollama
 spl execute examples/hello_world.spl
 ```
@@ -184,7 +184,7 @@ The entire SPL engine --- from idea to working prototype with arxiv paper --- wa
 - 4 example `.spl` programs covering basic QA, RAG, CTEs, and functions
 - 40 unit tests + 5 benchmark experiments + 4 paper figures
 - arxiv paper draft (~12 pages) with formal grammar, evaluation data, and competitive analysis
-- pip-installable package (`spl-lang v0.1.0`)
+- pip-installable package (`spl-llm v0.1.0`)
 
 **The core insight:** The LLM context window is a constrained resource --- just like disk I/O was for databases. Constrained resources deserve declarative query languages with optimizers. This is Codd's 1970 insight applied to 2026's problem.
 
