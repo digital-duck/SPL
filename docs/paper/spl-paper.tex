@@ -1080,13 +1080,24 @@ SPL's key innovations are:
 
 Beyond software engineering, SPL lowers the entry barrier for the large community of
 data engineers and analysts who already possess deep SQL expertise.
-As the author's own transition from data engineering to AI engineering illustrates,
-the conceptual leap from \texttt{SELECT} over relational tables to \texttt{PROMPT}/\texttt{SELECT}/\texttt{GENERATE}
+As the author's own transition from data engineering to AI engineering illustrates---first
+through building a RAG-powered analytics application~\citep{gong2024datacopilot} inspired
+by years of Oracle and SQL practice, and then through SPL itself---the conceptual leap
+from \texttt{SELECT} over relational tables to \texttt{PROMPT}/\texttt{SELECT}/\texttt{GENERATE}
 over LLM context sources is far smaller than learning a general-purpose programming framework
 from scratch.
 For the millions of practitioners who think naturally in sets, schemas, and declarative queries,
 SPL offers a familiar on-ramp into the GenAI domain---one that preserves and extends their
 existing mental models rather than discarding them.
+
+The NL-to-SQL community represents an especially natural early adopter group.
+Researchers and practitioners who work on translating natural language to SQL
+\citep{yu2018spider,yu2019sparc} are already fluent in the core paradigm---mapping
+free-form intent to a structured query language---and the extension from
+NL$\to$SQL to NL$\to$SPL is the smallest possible conceptual leap.
+Where NL-to-SQL systems target a \emph{static} knowledge base (relational tables),
+Text2SPL targets a \emph{generative} one (LLM weights), making SPL the natural
+next frontier for this research community.
 
 The reference implementation is available as an open-source Python package (\texttt{pip install spl-llm}) at \url{https://github.com/digital-duck/SPL}.
 
