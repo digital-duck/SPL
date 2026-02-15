@@ -19,8 +19,9 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
+
+from dd_logging import setup_logging as _dd_setup_logging
 
 try:
     import yaml
@@ -193,36 +194,21 @@ def _cmd_explain(args: list[str]):
         sys.exit(1)
 
 
-_LOG_LEVELS = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
+_LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 
 
 def _setup_logger(spl_filepath: str, adapter_name: str, log_level: str) -> logging.Logger:
     """Create a file logger: <script>-<adapter>-<datetime>.log under the SPL logs dir."""
-    log_dir = Path("/home/papagame/projects/digital-duck/SPL/logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    script_stem = Path(spl_filepath).stem          # e.g. "ri_family_v2"
-    dt_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_path = log_dir / f"{script_stem}-{adapter_name}-{dt_str}.log"
-
-    level = _LOG_LEVELS.get(log_level.lower(), logging.INFO)
-
-    # Attach handler to the root "spl" logger so spl.executor logs also flow here
-    spl_logger = logging.getLogger("spl")
-    spl_logger.setLevel(logging.DEBUG)   # capture everything; handler filters
-
-    # Remove stale handlers from previous runs in the same process
-    spl_logger.handlers = [h for h in spl_logger.handlers
-                           if not isinstance(h, logging.FileHandler)]
-
-    fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setLevel(level)
-    fh.setFormatter(logging.Formatter("%(asctime)s  %(levelname)-7s  %(name)s  %(message)s",
-                                      datefmt="%H:%M:%S"))
-    spl_logger.addHandler(fh)
-
+    run_name = Path(spl_filepath).stem      # e.g. "ri_family_v2"
+    log_path = _dd_setup_logging(
+        run_name,
+        root_name="spl",
+        adapter=adapter_name,
+        log_level=log_level,
+        log_dir=_LOG_DIR,
+    )
     print(f"Logging to: {log_path}  (level={log_level})")
-    return spl_logger
+    return logging.getLogger("spl")
 
 
 def _log(logger: logging.Logger | None, level: str, msg: str) -> None:
