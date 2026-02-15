@@ -14,6 +14,7 @@ TEX="${PAPER}.tex"
 PDF="${PAPER}.pdf"
 CLEAN=false
 MAX_PASSES=5
+MIN_POST_BIBTEX=2   # must run at least this many xelatex passes after bibtex
 
 # Parse args
 for arg in "$@"; do
@@ -67,12 +68,18 @@ echo "==> bibtex"
 bibtex_out=$(bibtex "$PAPER" 2>&1 || true)
 echo "$bibtex_out" | grep -Ei "warning|error" || echo "    OK (no warnings)"
 
-# Passes 2+ — loop until cross-references stabilise
+# Passes 2+ — always run at least MIN_POST_BIBTEX passes after bibtex,
+# then loop until cross-references stabilise.
+# (BibTeX citation labels need 2 xelatex passes to fully resolve;
+#  stopping after 1 leaves question marks even with a clean .bib.)
 pass=2
 while [[ $pass -le $MAX_PASSES ]]; do
   run_xelatex "$pass"
-  if ! grep -qE "Rerun to get cross-references right|Rerun LaTeX" "${PAPER}.log" 2>/dev/null; then
-    break
+  post_bibtex_passes=$(( pass - 1 ))
+  if [[ $post_bibtex_passes -ge $MIN_POST_BIBTEX ]]; then
+    if ! grep -qE "Rerun to get cross-references right|Rerun LaTeX" "${PAPER}.log" 2>/dev/null; then
+      break
+    fi
   fi
   if [[ $pass -eq $MAX_PASSES ]]; then
     echo "WARNING: cross-references did not stabilise after ${MAX_PASSES} passes"
