@@ -1005,6 +1005,56 @@ SPL is designed to complement, not replace, existing tools:
   \item \textbf{SPL for evaluation}: \texttt{EXPLAIN} output as a standard format for prompt auditing and compliance.
 \end{itemize}
 
+\subsection{SPL Ecosystem: Four Planned Extensions}
+
+Beyond the core language presented in this paper, we identify four high-value
+extensions that build on SPL's foundation:
+
+\begin{enumerate}
+
+  \item \textbf{Natural Language Interface (Text2SPL).}
+  Requiring users to write SPL directly raises the adoption barrier for
+  non-technical practitioners.  A \emph{Text2SPL} module---which translates a
+  free-form English query into a valid SPL script via an LLM---would make SPL
+  accessible to domain experts without programming backgrounds.  Preliminary
+  experiments show that few-shot prompting with SPL syntax examples produces
+  syntactically correct SPL for the majority of common query patterns; a
+  validate-and-retry loop further raises the success rate.  The resulting
+  pipeline (NL $\to$ SPL $\to$ execute) mirrors the role of natural language
+  interfaces in traditional databases~\citep{androutsopoulos1995natural}.
+
+  \item \textbf{Mixture-of-Models Routing (\texttt{USING MODEL auto}).}
+  Current SPL requires the author to hard-code a specific model in every
+  \texttt{USING MODEL} clause.  A \emph{late-bound routing} extension---written
+  \texttt{USING MODEL auto}---would resolve the target model at execution time
+  based on the task type inferred from the prompt content.  A routing table maps
+  task categories (CJK language, code, European language, mathematics,
+  multi-step reasoning, synthesis, general) to the world's best specialist
+  model for each category.  This \emph{Mixture-of-Models} (MoM) paradigm
+  maximises quality on heterogeneous multi-CTE scripts without requiring the
+  developer to know each model's strengths in advance.
+
+  \item \textbf{\texttt{BENCHMARK}: Parallel Model Comparison.}
+  Choosing the right model for a given SPL script today requires sequential
+  manual testing.  A \texttt{BENCHMARK} construct would run a single SPL script
+  against a user-supplied list of models in parallel
+  (\texttt{asyncio.gather}), collecting per-model response text, token
+  consumption, latency, and cost into a structured JSON report.  This
+  transforms model selection from guesswork into an evidence-based,
+  reproducible process---analogous to \texttt{EXPLAIN ANALYZE} in PostgreSQL,
+  which measures actual versus estimated query costs.
+
+  \item \textbf{Orchestration Layer (SPL-Flow).}
+  SPL scripts today are executed in isolation.  An \emph{orchestration layer}
+  would compose multiple SPL queries into directed pipelines with branching,
+  retries, and delivery targets (synchronous return, async file output, email
+  notification).  Such a layer would also integrate the Text2SPL, routing,
+  and BENCHMARK extensions into a unified platform accessible through a
+  Streamlit UI, a Python API, and a CLI---lowering the barrier to deploying
+  SPL-powered applications in production.
+
+\end{enumerate}
+
 
 % ============================================================
 \section{Conclusion}
