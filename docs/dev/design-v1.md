@@ -33,6 +33,29 @@ The key insight distinguishing SPL from mere "prompt templates":
 | `SELECT` | Retrieves existing data | Gathers context |
 | N/A | N/A | `GENERATE` creates new content from context |
 
+### Real-World Inspiration: Data-Copilot
+
+SPL grew directly out of hands-on pain encountered while building
+**[Data-Copilot](https://github.com/digital-duck/data-copilot)**, a RAG-powered
+conversational analytics application developed prior to SPL.
+
+Data-Copilot's implementation exposed the recurring friction that SPL is designed
+to eliminate:
+
+| Pain point in Data-Copilot | SPL solution |
+|-----------------------------|-------------|
+| Manual `tiktoken` calls scattered across modules to fit prompts in context | `WITH BUDGET` + `LIMIT` clauses — the optimizer handles allocation |
+| Ad hoc string concatenation to assemble prompts from retrieved chunks | `SELECT` from typed context sources with uniform syntax |
+| No visibility into which chunks consumed how many tokens | `EXPLAIN` shows the full token allocation tree before execution |
+| Retrieval, caching, and LLM calls wired together imperatively | Declarative `PROMPT` query — the engine handles ordering and caching |
+| Provider-specific code paths (OpenAI, Claude, local Ollama) | Adapter interface — swap providers without touching query logic |
+
+The key insight crystallised during that project: the repeated pattern of
+*gather context → fit within a limit → synthesise an answer* is essentially a
+**database query** — and deserved the same declarative treatment that SQL gave to
+*scan rows → filter → aggregate*. Data-Copilot was the working proof that the
+problem was real and worth solving at the language level.
+
 ---
 
 ## 2. Architecture
