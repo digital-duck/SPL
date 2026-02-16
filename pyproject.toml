@@ -24,6 +24,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
+    "click>=8.0",
     "faiss-cpu>=1.7.4",
     "numpy>=1.24",
     "httpx>=0.25",

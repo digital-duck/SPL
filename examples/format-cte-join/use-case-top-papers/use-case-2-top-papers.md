@@ -8,10 +8,12 @@
 
 ## The Original Question
 
-> *"List the most recent 2 papers published by Nobel Prize winners in Physics,
-> Fields Medal winners in Mathematics, and Turing Award winners in Computer
-> Science in the last 5 years. I am going to ask the same question to ChatGPT,
-> Gemini, and Claude, and see how each response compares."*
+```User
+List the most recent 2 papers published by each prize winner in Physics (Nobel Prize), in Mathematics (Fields Medal), and in Computer Science (Turing Award) in the last 5 years. 
+
+
+I am going to ask the same question to Google Search, ChatGPT, Gemini, and Claude, and see how each response compares.
+```
 
 A deceptively simple question. One sentence. Three domains. Three AI systems.
 And a surprisingly rich set of design decisions hiding underneath.
@@ -152,18 +154,181 @@ It also makes automated verification possible in a future pipeline.
 
 ---
 
-## The BENCHMARK: Comparing ChatGPT, Gemini, and Claude
+## Claude Opus 4.6 First Look: Web Search + Deep Research
 
-SPL's `BENCHMARK` construct runs the same `.spl` file against a list of models
-in parallel (`asyncio.gather`) and returns a structured JSON report.
+Before running the formal BENCHMARK, we tested the query against Claude Opus 4.6 via
+the claude.ai chat interface, which has web search capability. The results confirm
+our design hypothesis: **this question is primarily a search problem, not a knowledge
+problem**, and the model's behaviour changes fundamentally when it can access the web.
+
+### What Opus 4.6 Did
+
+Opus 4.6 made **four separate web searches** before compiling its answer:
+1. Searched for the full laureate lists across all three prizes (2021–2025)
+2. Searched for recent papers by each laureate — noting *"this is a massive research task"*
+3. Batched follow-up searches to fill gaps in individual laureate coverage
+4. Verified paper details before assembling the final document
+
+This is the search behaviour our SPL query was designed to elicit:
+a model that knows it doesn't know, and looks it up rather than fabricating.
+
+### Key Findings
+
+**Coverage**: Opus 4.6 identified **25 laureates** across all three prizes:
+- Nobel Physics (2021–2025): 15 winners over 5 cohorts (including 2025: John Clarke,
+  Michel Devoret, John Martinis — for quantum tunnelling in electric circuits)
+- Fields Medal (2022): 4 medallists (the only ICM cohort in the window)
+- Turing Award (2021–2024): 6 winners over 4 cohorts
+
+**Verifiable citations**: Papers were cited with specific arXiv IDs where available.
+For example, Geoffrey Hinton's entries included:
+- *"The Forward-Forward Algorithm: Some Preliminary Investigations"* — arXiv:2212.13345 ✓
+- *"Gaussian-Bernoulli RBMs Without Tears"* — arXiv:2210.10318 ✓
+
+Both arXiv IDs are real and verifiable — the strongest possible anti-hallucination
+signal. This is exactly what the `DOI or arXiv` column in our SPL query was designed
+to force.
+
+**2025 Nobel Physics included**: Opus 4.6 already had the 2025 Nobel Physics prize
+(awarded October 2025), which confirms its training data extends into late 2025 — and
+web search extends further still.
+
+### What This Proves
+
+| Claim | Evidence |
+|-------|---------|
+| This is a search problem | Opus 4.6 made 4 web searches; pure-knowledge models would guess |
+| Web search wins on recency | 2025 Nobel captured; a mid-2024 cutoff model would miss it |
+| DOI/arXiv requirement works | Real arXiv IDs provided; fabricated titles rarely survive this test |
+| `TEMPERATURE 0.1` is right | Low-confidence fabrications are penalised; Opus 4.6 hedged where uncertain |
+| 3 domains need independent PROMPTs | Each domain had different data availability; separate budgets helped |
+
+### The SPL Advantage Over a Plain Chat Prompt
+
+When you ask the same question in a plain chat interface:
+- You get one response, one model, one attempt
+- No token budget control (the model decides how much to say)
+- No structured output (tables may be inconsistent across domains)
+- No reproducibility (each run is independent; you cannot BENCHMARK)
+
+When you run it as an SPL query:
+- Three independent PROMPTs, each with a budget and temperature setting
+- `USING MODEL auto` routes each domain to the best available specialist
+- The same `.spl` file can be run against Opus 4.6, GPT-4o, and Gemini in a single
+  `spl-flow benchmark` call — parallel, structured, JSON-comparable
+- The DOI/arXiv column requirement is enforced in every run, not just when you remember
+  to ask
+
+---
+
+## The BENCHMARK: Multi-Model Comparison
+
+The same question was asked directly to Claude Opus 4.6 and ChatGPT (web search enabled
+in both). Below is a structured comparison. Results from Qwen, DeepSeek, Grok (X), and
+GLM are pending.
+
+---
+
+### Dimension 1 — Scope Coverage
+
+How many of the 25 laureates (2021–2025) did each model cover?
+
+| Model | Nobel Physics | Fields Medal | Turing Award | Total | 2025 Nobel |
+|-------|:---:|:---:|:---:|:---:|:---:|
+| **Claude Opus 4.6** | 15 / 15 (5 cohorts) | 4 / 4 | 6 / 6 | **25 / 25** | ✓ |
+| **ChatGPT** | 2 / 15 (2024 only) | 2 / 4 | ~4 (partial) | **~8 / 25** | ✗ |
+| Qwen | — | — | — | — | — |
+| DeepSeek | — | — | — | — | — |
+| Grok (X) | — | — | — | — | — |
+| GLM | — | — | — | — | — |
+
+ChatGPT's scope failure is structural: it answered "the most recent prize winners" as
+if that meant only the *latest single cohort* — Nobel 2024, but not 2023, 2022, 2021, or 2025.
+Opus 4.6 treated "last 5 years" correctly as a time window covering all cohorts.
+
+---
+
+### Dimension 2 — Citation Quality
+
+Were the paper titles and arXiv IDs real and verifiable?
+
+| Model | Real arXiv IDs | Fabricated titles | Substituted attribution | Honest hedges |
+|-------|:---:|:---:|:---:|:---:|
+| **Claude Opus 4.6** | Many (7+) | None detected | None | ✓ systematic |
+| **ChatGPT** | Some (4) | Some (arXiv search URLs) | **Yes — Hopfield** | Partial |
+| Qwen | — | — | — | — |
+| DeepSeek | — | — | — | — |
+| Grok (X) | — | — | — | — |
+| GLM | — | — | — | — |
+
+**Verified real arXiv IDs in Opus 4.6 response:**
+- Hinton: `arXiv:2212.13345`, `arXiv:2210.10318`
+- Duminil-Copin: `arXiv:2404.05700`
+- Maynard: `arXiv:2405.20552`, `arXiv:2407.14368`
+- Wigderson: `arXiv:2404.10839`
+
+---
+
+### Dimension 3 — The Most Interesting Failure (Hopfield Substitution)
+
+ChatGPT's Hopfield section is the sharpest failure signal in the dataset.
+
+Correctly noting that *"Hopfield himself does not have a recent direct arXiv entry"*,
+ChatGPT then filled the two required rows with papers by **other authors** at JKU Linz
+who built extensions of Hopfield networks:
+
+```
+arXiv:2405.08766 — "Energy-based Hopfield Boosting for OoD Detection"  [ml-jku.github.io]
+arXiv:2405.08769 — "Hopular: Modern Hopfield Networks for Tabular Data" [ml-jku.github.io]
+```
+
+These are **real papers** — but they are not *by Hopfield*. The arXiv IDs check out; the
+attribution is wrong. The model satisfied the format requirement (two rows with arXiv
+links) while violating the semantic requirement (papers *by* the laureate).
+
+This is a subtler failure mode than outright fabrication:
+- The links are real → passes a naive URL-checker
+- The papers are topically relevant → passes a casual reader
+- The attribution is wrong → fails verification the moment you check the authors
+
+**Taxonomy of failure modes observed so far:**
+
+| Failure mode | ChatGPT | Opus 4.6 |
+|---|---|---|
+| Scope truncation (only latest cohort) | ✓ | — |
+| Title fabrication (invented paper) | Some (search URLs) | None |
+| Attribution substitution (wrong author, real paper) | ✓ (Hopfield) | — |
+| Textbook as "research paper" (Barto/Sutton RL textbook) | ✓ | — |
+| Retired-laureate honesty (admits no recent output) | Partial | ✓ systematic |
+| Salesperson closing ("would you like PDFs?") | ✓ | — |
+
+---
+
+### Dimension 4 — Format Faithfulness
+
+Did the model follow the structured table format requested?
+
+| Model | Table format | Per-laureate sections | Emojis / clutter | Consistent columns |
+|-------|:---:|:---:|:---:|:---:|
+| **Claude Opus 4.6** | ✓ | ✓ | None | ✓ |
+| **ChatGPT** | Partial | ✓ | 🧪📐💻📄🔍 | ✗ (mixed) |
+
+ChatGPT's use of emoji headers (🧪 for Physics, 📐 for Mathematics) is cosmetically
+appealing but breaks machine-readable output. An SPL `FORMAT markdown` directive should
+suppress this. It also mixed table and prose formats within the same domain.
+
+---
+
+### Running the Formal BENCHMARK
+
+SPL's `BENCHMARK` construct runs the same `.spl` file against N models in parallel
+and returns a structured JSON report — reproducible and machine-comparable.
 
 ```bash
-# Via CLI (OpenRouter — requires OPENROUTER_API_KEY)
-spl benchmark examples/format-cte-join/papers-by-top-prize-winners-recently_v1.spl \
-    --model anthropic/claude-sonnet-4-5 \
-    --model openai/gpt-4o              \
-    --model google/gemini-pro-1.5      \
-    --adapter openrouter               \
+# Via SPL-Flow CLI (OpenRouter — requires OPENROUTER_API_KEY)
+spl-flow benchmark examples/format-cte-join/use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl \
+    --models "anthropic/claude-opus-4-6,openai/gpt-4o,google/gemini-pro-1.5,qwen/qwen-max,deepseek/deepseek-chat,x-ai/grok-2" \
+    --adapter openrouter \
     --json > prize_papers_comparison.json
 
 # Via SPL-Flow Streamlit UI
@@ -174,17 +339,32 @@ spl benchmark examples/format-cte-join/papers-by-top-prize-winners-recently_v1.s
 
 | Signal | Interpretation |
 |--------|---------------|
-| All three models cite the same paper | High-confidence ground truth — verify anyway |
+| All models cite the same paper with matching arXiv ID | High-confidence ground truth |
 | Two agree, one differs | Minority is likely hallucinating |
-| All three cite different papers | Low reliability — search required |
-| Model hedges ("I'm not certain of this title") | Good calibration, follows system role |
-| Model gives full citation with no hedging | Verify carefully — may be confabulated |
-| Model refuses ("my knowledge cutoff is...") | Honest but unhelpful — a different failure mode |
-| Google Search returns the paper | Ground truth verification |
+| All cite different papers | Low reliability — verify via Google Scholar |
+| Model provides arXiv IDs that resolve correctly | Strong anti-hallucination signal |
+| Model provides arXiv IDs that 404 | Fabricated citation — worst failure mode |
+| Model substitutes related-but-wrong author | Subtle failure — passes URL check, fails attribution |
+| Model explicitly hedges ("unable to verify") | Correct calibration, follows system role |
+| Model covers all cohorts 2021–2025 | Treated as a time-window problem (correct) |
+| Model covers only latest cohort | Treated as "most recent" = singular (incorrect) |
 
-**The most important comparison is not *what* each model says, but *how confident*
-it is when it shouldn't be.** That tells you more about production reliability than
-any benchmark score.
+**The most important comparison is not *what* each model says, but *how it handles
+the cases where it cannot know for certain*.** The Hopfield substitution is more
+dangerous than an explicit fabrication because it passes superficial verification.
+
+---
+
+### Response Files
+
+| File | Model | Date | Web search |
+|------|-------|------|------------|
+| `response-claude-opus46.md` | Claude Opus 4.6 | Feb 2026 | ✓ (4 searches) |
+| `response-chatgpt.md` | ChatGPT (GPT-4o) | Feb 2026 | ✓ |
+| `response-qwen.md` | Qwen | — | pending |
+| `response-deepseek.md` | DeepSeek | — | pending |
+| `response-grok.md` | Grok (X) | — | pending |
+| `response-glm.md` | GLM | — | pending |
 
 ---
 
@@ -297,28 +477,29 @@ language.
 | File | Description |
 |------|-------------|
 | `papers-by-top-prize-winners-recently_v1.spl` | The SPL query (3 PROMPT statements) |
-| `use-case-2-top-papers.md` | This document — design notes + blog draft |
+| `use-case-2-top-papers.md` | This document — design notes, comparison analysis, blog draft |
+| `response-claude-opus46.md` | Claude Opus 4.6 response (25 laureates, web search, Feb 2026) |
+| `response-chatgpt.md` | ChatGPT (GPT-4o) response (partial scope, Feb 2026) |
+| `response-qwen.md` | Qwen response *(pending)* |
+| `response-deepseek.md` | DeepSeek response *(pending)* |
+| `response-grok.md` | Grok (X) response *(pending)* |
+| `response-glm.md` | GLM response *(pending)* |
 
 ---
 
 ## Run It
 
 ```bash
-# Quick test — Claude CLI (free, no API key needed)
-spl execute examples/format-cte-join/papers-by-top-prize-winners-recently_v1.spl \
-    --adapter claude_cli \
-    --param years="2020-2025"
+cd examples/format-cte-join/use-case-top-papers/
+# Preview token plan without running (free — no LLM call)
+spl explain papers-by-top-prize-winners-recently_v1.spl --log ./spl_explain.log --output ./spl_explain.md
+
+# SPL test using adapter=Claude CLI (free, no API key needed)
+spl execute papers-by-top-prize-winners-recently_v1.spl --adapter claude_cli --params "years=2020-2025" --log ./spl_cli.log --output ./spl_cli.json
 
 # BENCHMARK — compare three models (requires OpenRouter API key)
-spl benchmark examples/format-cte-join/papers-by-top-prize-winners-recently_v1.spl \
-    --model anthropic/claude-sonnet-4-5 \
-    --model openai/gpt-4o \
-    --model google/gemini-pro-1.5 \
-    --adapter openrouter \
-    --json > prize_papers_comparison.json
+splflow use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl --adapter openrouter --models "anthropic/claude-sonnet-4-5, openai/gpt-4o, google/gemini-1.5-pro" --log ./spl_benchmark.log --output ./spl_benchmark.json
 
-# Preview token plan without running (free — no LLM call)
-spl explain examples/format-cte-join/papers-by-top-prize-winners-recently_v1.spl
 ```
 
 ---
