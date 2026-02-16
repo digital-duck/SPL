@@ -243,8 +243,20 @@ def cmd_validate(file: str) -> None:
 
 @cli.command("explain")
 @click.argument("file", type=click.Path(dir_okay=False))
-def cmd_explain(file: str) -> None:
+@_log_opt
+@_log_level_opt
+@click.option("--output", "output_file", default=None, metavar="FILE",
+              help="Write execution plan to FILE (format inferred from extension).")
+def cmd_explain(file: str, log_file: str | None, log_level: str, output_file: str | None) -> None:
     """Show execution plan for FILE (no LLM call)."""
+    if log_file:
+        _setup_logger(
+            run_name=Path(file).stem,
+            adapter_name="",
+            log_level=log_level,
+            log_file=log_file,
+        )
+
     source = _read_file(file)
     try:
         from spl.lexer import Lexer
@@ -258,16 +270,26 @@ def cmd_explain(file: str) -> None:
         result = Analyzer().analyze(ast)
         plans = Optimizer().optimize(result)
 
+        lines: list[str] = []
         if plans:
-            click.echo(explain_plans(plans))
+            lines.append(explain_plans(plans))
         else:
-            click.echo("No PROMPT statements found to explain.")
+            lines.append("No PROMPT statements found to explain.")
 
         if result.warnings:
-            click.echo("\nAnalysis Warnings:")
+            lines.append("\nAnalysis Warnings:")
             for w in result.warnings:
-                click.echo(f"  {w}")
+                lines.append(f"  {w}")
 
+        output_text = "\n".join(lines)
+        click.echo(output_text)
+
+        if output_file:
+            fmt = _infer_format(output_file, None)
+            _write_output(output_text, output_file, fmt)
+
+    except click.ClickException:
+        raise
     except Exception as exc:
         raise click.ClickException(str(exc)) from exc
 
@@ -296,6 +318,11 @@ def cmd_explain(file: str) -> None:
                    "Single value applies to all; multiple values cycle per PROMPT.")
 @click.option("--json", "as_json", is_flag=True, default=False,
               help="Print full JSON metrics for each PROMPT result.")
+@click.option("--tools", "tools_str", default="", metavar="TOOL1,TOOL2,...",
+              help="Comma-separated tools to allow the Claude CLI (e.g. 'WebSearch,WebFetch').")
+@click.option("--claude-cli-timeout", "claude_cli_timeout", default=300, show_default=True,
+              metavar="SECONDS",
+              help="Timeout in seconds for each Claude CLI subprocess call.")
 @click.option("--quiet", is_flag=True, default=False,
               help="Suppress progress output; print only the final result.")
 def cmd_execute(
@@ -310,11 +337,14 @@ def cmd_execute(
     params_str: str,
     models_str: str,
     as_json: bool,
+    tools_str: str,
+    claude_cli_timeout: int,
     quiet: bool,
 ) -> None:
     """Execute FILE and print each PROMPT result."""
     params = _parse_params_str(params_str)
     model_overrides = _parse_models_str(models_str)
+    allowed_tools = _parse_models_str(tools_str)  # same comma/space split logic
     source = _read_file(file)
 
     logger: logging.Logger | None = None
@@ -336,6 +366,8 @@ def cmd_execute(
     _log("info", f"params  : {params}")
     if model_overrides:
         _log("info", f"models  : {model_overrides}")
+    if allowed_tools:
+        _log("info", f"tools   : {allowed_tools}")
 
     t_start = time.perf_counter()
 
@@ -378,7 +410,16 @@ def cmd_execute(
             analysis = Analyzer().analyze(ast)
             plans = Optimizer().optimize(analysis)
 
-        executor = Executor(adapter_name=adapter, cache_enabled=cache)
+        adapter_kwargs: dict = {}
+        if allowed_tools:
+            adapter_kwargs["allowed_tools"] = allowed_tools
+        if adapter == "claude_cli":
+            adapter_kwargs["timeout"] = claude_cli_timeout
+        executor = Executor(
+            adapter_name=adapter,
+            cache_enabled=cache,
+            adapter_kwargs=adapter_kwargs or None,
+        )
 
         for stmt in ast.statements:
             if isinstance(stmt, CreateFunctionStatement):

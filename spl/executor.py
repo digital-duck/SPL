@@ -50,8 +50,9 @@ class Executor:
         storage_dir: str = ".spl",
         vector_backend: str = "faiss",
         cache_enabled: bool = False,
+        adapter_kwargs: dict | None = None,
     ):
-        self.adapter = adapter or get_adapter(adapter_name)
+        self.adapter = adapter or get_adapter(adapter_name, **(adapter_kwargs or {}))
         self.memory = MemoryStore(f"{storage_dir}/memory.db")
         self.functions = FunctionRegistry()
         self.cache_enabled = cache_enabled

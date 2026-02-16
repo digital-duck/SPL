@@ -21,9 +21,15 @@ class ClaudeCLIAdapter(LLMAdapter):
     Claude Code subscription (flat billing = zero marginal cost per call).
     """
 
-    def __init__(self, cli_path: str = "claude", timeout: int = 120):
+    def __init__(
+        self,
+        cli_path: str = "claude",
+        timeout: int = 300,
+        allowed_tools: list[str] | None = None,
+    ):
         self.cli_path = cli_path
         self.timeout = timeout
+        self.allowed_tools = allowed_tools or []
 
     async def generate(
         self,
@@ -43,6 +49,8 @@ class ClaudeCLIAdapter(LLMAdapter):
 
         # Build CLI command
         cmd = [self.cli_path, "-p", full_prompt]
+        if self.allowed_tools:
+            cmd += ["--allowedTools", ",".join(self.allowed_tools)]
 
         # Run subprocess asynchronously
         try:
