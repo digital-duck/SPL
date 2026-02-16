@@ -478,23 +478,16 @@ This ordering minimizes latency by executing the cheapest operations first, anal
 
 The SPL engine follows a classic compiler pipeline architecture, mirroring the structure of SQL query engines:
 
-\begin{verbatim}
-SPL Source (.spl file)
-       |
-   [Lexer]            Character stream -> Token stream
-       |
-   [Parser]           Token stream -> AST
-       |
-   [Analyzer]         AST -> Validated AST
-       |
-   [Optimizer]        Validated AST -> Execution Plan
-       |
-   [Executor]         Execution Plan -> Results
-   /    |    \
-[LLM] [Memory] [RAG]
-  |       |       |
-OpenRouter SQLite  FAISS
-\end{verbatim}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/arch_diagram.pdf}
+\caption{SPL engine pipeline architecture. The compiler stages (blue input,
+green pipeline) transform SPL source into an execution plan consumed by the
+executor (yellow), which dispatches to three back-end subsystems (pink):
+LLM adapters (OpenRouter / Claude CLI), a SQLite memory store, and a vector
+RAG store supporting both FAISS and ChromaDB (purple).}
+\label{fig:arch}
+\end{figure}
 
 \subsubsection{Lexer}
 
@@ -639,7 +632,7 @@ SPL integrates two storage systems, both file-based for portability:
 
 \begin{description}[nosep]
   \item[SQLite Memory Store] (\texttt{.spl/memory.db}): Provides persistent key-value storage for \texttt{memory.get()} and \texttt{STORE RESULT IN memory.<key>}. Also stores prompt cache entries with TTL support. SQLite was chosen for its zero-configuration deployment, battle-tested reliability, and inclusion in the Python standard library.
-  \item[FAISS Vector Store] (\texttt{.spl/vectors.faiss}): Provides semantic similarity search for \texttt{rag.query()}. Document metadata is stored in a companion SQLite database (\texttt{.spl/vectors\_meta.db}). FAISS was chosen for its speed, wide adoption, and file-based persistence.
+  \item[Vector Store] (\texttt{.spl/vectors.*}): Provides semantic similarity search for \texttt{rag.query()}. The engine supports two backends: \textbf{FAISS}~\citep{johnson2019billion} for file-based, zero-configuration deployment, and \textbf{ChromaDB} for richer metadata filtering and a managed-server mode. Both expose an identical Python interface, making the choice transparent to SPL queries. Document metadata is stored in a companion SQLite database (\texttt{.spl/vectors\_meta.db}).
 \end{description}
 
 Both stores reside in a \texttt{.spl/} directory within the project, analogous to \texttt{.git/} for version control. This directory is gitignore-able and self-contained, enabling reproducible deployments.
