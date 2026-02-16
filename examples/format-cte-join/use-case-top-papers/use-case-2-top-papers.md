@@ -365,6 +365,73 @@ mechanism — not just a hint.
 
 ---
 
+### Dimension 5 — The Observer Effect: Web UI vs API
+
+**Same model. Same question. Different interaction channel. Measurably different output.**
+
+We have a direct controlled comparison for Claude Opus 4.6: the web chat response
+(`response-claude-opus46.md`) and the SPL BENCHMARK v2 API response
+(`results/spl_benchmark-v2.json`, run via OpenRouter). Same model version, same question.
+
+| Dimension | Web UI (claude.ai) | API (OpenRouter, SPL benchmark) |
+|---|---|---|
+| Awards covered | Nobel Physics + Fields Medal + **Turing** (all three) | **Turing Award only** |
+| 2024 Turing co-winner | Barto + **Sutton** ✓ | Barto + **Littman** ✗ |
+| Epistemic style | Prose hedges ("most recent identifiable…") | Explicit `unable to verify` cells |
+| DOIs / arXiv provided | **None** | Several (Ullman, Dongarra, Wigderson) |
+| Paper recency | More recent (2023–2024) | More conservative (2021–2022) |
+| Verifiability | Low (no links) | Higher (some real DOIs to check) |
+
+**The most significant discrepancy: the 2024 Turing winner.**
+
+The web UI correctly identified **Barto + Sutton**, even providing Sutton's specific 2024 papers:
+- *"Loss of Plasticity in Deep Continual Learning"* — *Nature* 632:768–774 ✓
+- *"Reward Centering"* — *Reinforcement Learning Journal* 2024 ✓
+
+The API hallucinated **Barto + Littman** — a plausible RL researcher, but not the co-winner.
+This is not a web-search advantage: the 2024 Turing winner was within training data for both runs.
+The channel shaped which part of the model's memory was activated.
+
+**Why the scope narrowed to Turing only in the API response** is also telling. The structured
+table format (with DOI columns per award) may have caused the model to limit scope defensively
+— it could produce verifiable entries for CS, but felt less confident supplying DOIs for Physics
+and Mathematics laureates. The free-form web UI prompt, requiring no DOIs, allowed confident
+coverage of all three domains.
+
+**The structured format forced a different kind of honesty.** When a column explicitly demands
+a DOI, the model cannot hide uncertainty behind fluent prose — it must write `unable to verify`.
+The web UI prompt allowed confident narrative that was harder to check. Both contain errors,
+but the errors are in different places and of different types:
+
+| Error type | Web UI | API |
+|---|---|---|
+| Wrong co-winner identity | None (Sutton correct) | ✓ Littman hallucination |
+| Scope narrowing | None (all 3 awards) | ✓ Turing only |
+| Unverifiable citations | ✓ (no DOIs at all) | Partial (marked explicitly) |
+| Over-confident narrative | ✓ | None (hedged in tables) |
+
+**The physics analogy the user observed is apt.**
+In quantum mechanics, the measurement apparatus changes the observable — not by adding
+information, but by collapsing a superposition into one eigenstate. Here the measurement
+apparatus (web UI vs structured API table) collapses the model's response into a different
+region of its parametric knowledge. The underlying weights are identical; the observable differs.
+
+**Implications for benchmarking:**
+
+1. **API benchmarks test "LLM + structured prompt"** — closer to production pipeline use,
+   but may miss capabilities that only manifest in conversational interaction.
+2. **Web UI benchmarks test "LLM + platform system prompt + implicit tooling"** — higher
+   ceiling for coverage and recency, but harder to reproduce and compare across models.
+3. **The same model can be Tier 1 (web UI) or Tier 3 (API) depending on how you ask.**
+   Our ranking table should be read as a ranking of *interaction modality × model*, not model alone.
+4. **GLM-5 will be the next data point** — its web UI used active tool calling (terminals,
+   JS scripts), which will almost certainly outperform its raw API response on citation recall.
+
+**Practical recommendation for SPL users:** for knowledge-intensive tasks that benefit from
+web retrieval, use `spl execute --tools "WebSearch,WebFetch"` to give the model the same
+retrieval capability its web UI has. The structured SPL query then provides reproducibility
+on top of search capability — the best of both channels.
+
 ---
 
 ### SPL Formal BENCHMARK — OpenRouter Results
@@ -469,32 +536,39 @@ The response was generated but contained a control character the executor couldn
 This is an executor robustness issue (tracked in README-TODO), not a GLM quality issue.
 The web-chat GLM result remains strong.
 
-**Updated failure taxonomy** (adding v2 observations):
+**Updated failure taxonomy** (adding v2 observations + channel-effect findings):
 
-| Failure mode | ChatGPT | Opus 4.6 | Grok | GPT-4o | Gemini-Pro | Gemini-Flash | Qwen3 | Kimi K2 |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Scope truncation | ✓ | — | — | ✓ (cutoff) | — | — | — | — |
-| Wrong winner identity | — | ✓ (Littman) | — | ✓ (Jordan) | — | — | ✓✓ (year-shift) | ✓✓ (year-shift) |
-| Title fabrication | Some | None | Low | Some | Low | Medium | Medium | Low |
-| Attribution substitution | ✓ Hopfield | — | — | — | — | — | — | — |
-| Retired-laureate honesty | Partial | ✓ | ✓ | ✓ | Nobel Lecture | ✓ | Partial | ✓ |
-| Knowledge cutoff handling | ✗ | Partial | — | ✓ explicit | ✓ explicit | ✓ explicit | ✗ | ✗ |
-| Executor parse failure | — | — | — | — | — | — | — | — |
+| Failure mode | ChatGPT | Opus 4.6 (web) | Opus 4.6 (API) | Grok | GPT-4o | Gemini-Pro | Gemini-Flash | Qwen3 | Kimi K2 |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Scope truncation | ✓ | — | ✓ (Turing only) | — | ✓ (cutoff) | — | — | — | — |
+| Wrong winner identity | — | — | ✓ (Littman) | — | ✓ (Jordan) | — | — | ✓✓ (year-shift) | ✓✓ (year-shift) |
+| Title fabrication | Some | None | None | Low | Some | Low | Medium | Medium | Low |
+| Attribution substitution | ✓ Hopfield | — | — | — | — | — | — | — | — |
+| No DOIs / unverifiable | — | ✓ (prose only) | — | — | — | — | — | — | — |
+| Retired-laureate honesty | Partial | ✓ | ✓ | ✓ | ✓ | Nobel Lecture | ✓ | Partial | ✓ |
+| Knowledge cutoff handling | ✗ | Partial | Partial | — | ✓ explicit | ✓ explicit | ✓ explicit | ✗ | ✗ |
+| Executor parse failure | — | — | — | — | — | — | — | — | — |
+
+**Key insight**: Opus 4.6 web and Opus 4.6 API have *complementary* strengths —
+the web response gets winner identity right but has no DOIs; the API response provides
+verifiable DOIs but hallucinates the co-winner. Neither dominates on all dimensions.
 
 ---
 
 ### Overall Model Ranking
 
-Combining web-chat and SPL-BENCHMARK runs (v1 + v2):
+Combining web-chat and SPL-BENCHMARK runs (v1 + v2).
+**Note**: rankings are for *interaction modality × model* — not model alone (see Dimension 5).
 
 | Tier | Model | Mode | Strengths | Weaknesses |
 |------|-------|------|-----------|------------|
-| **1** | Claude Opus 4.6 | web chat | 25/25 scope, 7+ real arXiv, 2025 Nobel, systematic hedges | Minor: Littman≠Sutton for 2024 Turing |
+| **1** | Claude Opus 4.6 | **web chat** | 25/25 scope, 7+ real arXiv IDs, 2025 Nobel, Barto+Sutton ✓ | No DOIs (prose only) |
 | **1** | GLM (web) | web chat | Real web search URLs, honest gap analysis, clean format | Full response in docx only |
 | **1** | gemini-3-flash | SPL/v2 | 14/14 Physics, 4/4 Math, correct 2020-2023 CS, 26s | No 2025 Nobel (static knowledge) |
 | **2** | gemini-3-pro | SPL/v2 | Nobel Lecture fallback, most principled uncertainty handling | Slowest (111s), 2024 Turing unannounced |
 | **2** | Grok / X | web chat | Full coverage, specific arXiv IDs, retirement notes | Hallucination risk not fully verified |
 | **2** | Qwen (web chat) | web chat | Broad scope (includes 2018 Fields), citation refs | Bracket refs not directly verifiable |
+| **3** | Claude Opus 4.6 | **API (SPL/v2)** | Explicit `unable to verify`, some real DOIs | Turing only (scope narrowed), Barto+Littman ✗ |
 | **3** | gpt-4o-2024-11-20 | SPL/v2 | Honest cutoff, real DOIs where known, 28s | Jordan≠Wigderson for 2023 Turing |
 | **3** | claude-sonnet-4.5 | SPL/v1 | Good DOIs, systematic "unable to verify" | Hallucinated Turing 2023 winner |
 | **3** | Kimi (web chat) | web chat | 25 winners listed, clean headers | No arXiv IDs, vague on some papers |
@@ -504,7 +578,8 @@ Combining web-chat and SPL-BENCHMARK runs (v1 + v2):
 | **4** | DeepSeek | web chat | Honest (via abstention) | Only 2 Nobel years, skipped Turing entirely |
 | **5** | Perplexity | web chat | — | Refused the task entirely |
 | **5** | Claude CLI (no tools) | SPL | — | Refused all 3 prompts (needs `--tools WebSearch,WebFetch`) |
-| **—** | GLM 4.6 | SPL/v2 | Strong in web chat | Executor parse failure (JSON control char bug) |
+| **—** | GLM 4.6 | SPL/v2 | Strong in web chat | Executor parse failure (JSON control char bug — now fixed) |
+| **TBD** | GLM 5 | SPL/v2 | Web chat showed tool-augmented deep research | API result pending (channel effect expected to be significant) |
 
 ---
 
@@ -691,6 +766,7 @@ outperforms GPT-4o web on this benchmark.
 | `results/spl_benchmark.json` | SPL BENCHMARK v1: claude-sonnet-4.5 / gpt-4o / gemini-3-flash |
 | `results/spl_benchmark-v2.json` | SPL BENCHMARK v2: 7 models — opus-4.6, gpt-4o, gemini-3-pro, gemini-3-flash, glm-4.6, qwen3-235b, kimi-k2 |
 | `results/spl_benchmark-auto.json` | SPL BENCHMARK: openrouter/auto (refused — no web search access) |
+| `results/spl_benchmark-v2.json` *(updated)* | GLM-5 run appended via `splflow rerun` (pending) |
 
 ---
 
@@ -730,4 +806,4 @@ bash run_tests.sh
 
 ---
 
-*Last updated: 16 February 2026 — SPL v0.1.0 — Benchmark v2 (7 models)*
+*Last updated: 16 February 2026 — SPL v0.1.0 — Benchmark v2 (7 models) + Observer Effect analysis (Opus 4.6 web vs API) + GLM-5 pending*

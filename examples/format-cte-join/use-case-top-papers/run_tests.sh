@@ -18,7 +18,7 @@ spl execute papers-by-top-prize-winners-recently_v1.spl \
 # BENCHMARK — compare three models (requires OpenRouter API key)
 splflow benchmark papers-by-top-prize-winners-recently_v1.spl \
     --adapter openrouter \
-    --models "anthropic/claude-opus-4.6, openai/gpt-4o-2024-11-20, google/gemini-3-pro-preview, google/gemini-3-flash-preview, z-ai/glm-4.6, qwen/qwen3-235b-a22b, moonshotai/kimi-k2" \
+    --models "anthropic/claude-opus-4.6, openai/gpt-4o-2024-11-20, google/gemini-3-pro-preview, google/gemini-3-flash-preview, z-ai/glm-5, qwen/qwen3-235b-a22b, moonshotai/kimi-k2" \
     --log ./results/spl_benchmark-v2.log \
     --output ./results/spl_benchmark-v2.json
 
@@ -28,6 +28,8 @@ splflow benchmark papers-by-top-prize-winners-recently_v1.spl \
 #     --log ./results/spl_benchmark.log \
 #     --output ./results/spl_benchmark.json
 
+
+splflow rerun results/spl_benchmark-v2.json --model z-ai/glm-5 --adapter openrouter
 
 splflow benchmark papers-by-top-prize-winners-recently_v1.spl \
     --adapter openrouter \
