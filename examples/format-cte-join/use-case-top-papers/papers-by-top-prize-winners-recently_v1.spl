@@ -1,0 +1,126 @@
+-- papers-by-top-prize-winners-recently_v1.spl
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Refined question:
+--   "List the most recent 2 papers published by EACH Nobel Prize winner in
+--   Physics, Fields Medal winner in Math, and Turing Award winner in Computer
+--   Science in the past 5 years (2020-2025)."
+--
+-- Key refinement over the naive question:
+--   • "each winner" — covers every individual laureate, not just one example
+--   • DOI / arXiv link required — makes every entry independently verifiable;
+--     a model that cannot supply a link should say so (not fabricate one)
+--   • Three separate PROMPTs — clean per-domain output, independent budgets,
+--     MoM routing assigns each domain to its strongest specialist model
+--   • TEMPERATURE 0.1 — factual/recall mode, minimises hallucination variance
+--   • System role explicitly prohibits guessing; asks for honest uncertainty
+--
+-- Run against a single model:
+--   spl execute examples/format-cte-join/use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl \
+--       --adapter claude_cli --param years="2020-2025"
+--
+-- BENCHMARK — compare ChatGPT, Gemini, Claude side-by-side:
+--   spl benchmark examples/format-cte-join/use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl \
+--       --model anthropic/claude-sonnet-4-5 \
+--       --model openai/gpt-4o              \
+--       --model google/gemini-pro-1.5      \
+--       --adapter openrouter               \
+--       --json > prize_papers_comparison.json
+-- ─────────────────────────────────────────────────────────────────────────────
+
+
+-- ── Domain 1: Nobel Prize in Physics (2020-2024) ─────────────────────────────
+
+PROMPT physics_prize_papers
+WITH BUDGET 6000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in physics.
+Provide accurate, verifiable information only.
+For EACH winner listed, provide only papers whose titles and venues you are
+confident about — include a DOI or arXiv link where possible.
+If you cannot verify a specific paper, write 'unable to verify' in that cell
+rather than guessing. Factual accuracy and verifiability matter more than
+completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) published by
+EACH individual Nobel Prize winner in Physics from 2020 to 2024.
+Cover all laureates: 2020 (Penrose, Genzel, Ghez), 2021 (Manabe, Hasselmann,
+Parisi), 2022 (Aspect, Clauser, Zeilinger), 2023 (L'Huillier, Agostini,
+Krausz), 2024 (Hopfield, Hinton).
+For each winner provide a separate row:
+| Winner | Nobel year | Paper title | Journal / venue | Pub. year | DOI or arXiv | 1-sentence summary |
+If a DOI or arXiv link is unavailable, write 'N/A'. Do not fabricate links."
+    )
+WITH OUTPUT BUDGET 2500 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
+
+
+-- ── Domain 2: Fields Medal in Mathematics (2022) ─────────────────────────────
+-- Note: Fields Medal is awarded every 4 years; 2022 is the only cohort in the
+-- 5-year window 2020-2025. Next award: 2026 ICM.
+
+PROMPT math_prize_papers
+WITH BUDGET 5000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in pure and
+applied mathematics.
+Provide accurate, verifiable information only.
+For EACH medallist listed, provide only papers whose titles and journals you are
+confident about — include a DOI or arXiv link where possible.
+If you cannot verify a specific paper, write 'unable to verify' in that cell
+rather than guessing. Factual accuracy and verifiability matter more than
+completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) published by
+EACH individual Fields Medal winner from 2022.
+Cover all four medallists: June Huh, Hugo Duminil-Copin, James Maynard,
+Maryna Viazovska.
+For each medallist provide a separate row:
+| Medallist | Medal year | Paper title | Journal | Pub. year | DOI or arXiv | 1-sentence summary |
+If a DOI or arXiv link is unavailable, write 'N/A'. Do not fabricate links."
+    )
+WITH OUTPUT BUDGET 1800 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
+
+
+-- ── Domain 3: Turing Award in Computer Science (2020-2024) ───────────────────
+
+PROMPT cs_prize_papers
+WITH BUDGET 6000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in computer
+science and AI.
+Provide accurate, verifiable information only.
+For EACH winner listed, provide only papers whose titles and venues you are
+confident about — include a DOI or arXiv link where possible.
+If you cannot verify a specific paper, write 'unable to verify' in that cell
+rather than guessing. Factual accuracy and verifiability matter more than
+completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) published by
+EACH individual Turing Award winner from 2020 to 2024.
+Cover all winners: 2020 (Alfred Aho, Jeffrey Ullman), 2021 (Jack Dongarra),
+2022 (Robert Metcalfe), 2023 (Avi Wigderson), 2024 (winner if announced).
+For each winner provide a separate row:
+| Winner | Award year | Paper title | Venue (conf. / journal) | Pub. year | DOI or arXiv | 1-sentence summary |
+If a DOI or arXiv link is unavailable, write 'N/A'. Do not fabricate links."
+    )
+WITH OUTPUT BUDGET 2500 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
