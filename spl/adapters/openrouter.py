@@ -98,7 +98,23 @@ class OpenRouterAdapter(LLMAdapter):
                 f"OpenRouter API error ({response.status_code}): {response.text}"
             )
 
-        data = response.json()
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            # Some models (e.g. z-ai/glm-4.6) return responses that embed raw
+            # control characters inside JSON string values — Python's json parser
+            # rejects these.  Strip ASCII control chars (except \t \n \r) and
+            # retry once before giving up.
+            import re as _re
+            sanitized = _re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", response.text)
+            try:
+                data = json.loads(sanitized)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"OpenRouter API returned unparseable JSON "
+                    f"(model={model}): {exc}"
+                ) from exc
+
         choice = data["choices"][0]
         content = choice["message"]["content"]
         usage = data.get("usage", {})
