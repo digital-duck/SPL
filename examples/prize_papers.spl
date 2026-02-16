@@ -1,0 +1,107 @@
+-- prize_papers.spl
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Showcase: 2 most recent papers by prize winners in Physics, Math, and CS
+-- (Nobel Prize / Fields Medal / Turing Award, last 5 years: 2020-2025)
+--
+-- Design notes:
+--   • Three PROMPT statements — one per domain, clean per-domain output
+--   • USING MODEL auto — MoM routing assigns each to its strongest specialist
+--   • TEMPERATURE 0.1 — low temp reduces hallucination on factual queries
+--   • System role instructs the model to admit uncertainty rather than guess
+--     (key signal: which model is honest vs. which fabricates confidently)
+--
+-- Run against a single model:
+--   spl execute prize_papers.spl --adapter claude_cli
+--   spl execute prize_papers.spl --adapter openrouter --param model=openai/gpt-4o
+--
+-- BENCHMARK — compare ChatGPT, Gemini, Claude side-by-side:
+--   spl benchmark prize_papers.spl \
+--       --model anthropic/claude-sonnet-4-5 \
+--       --model openai/gpt-4o              \
+--       --model google/gemini-pro-1.5      \
+--       --adapter openrouter               \
+--       --json > prize_papers_comparison.json
+-- ─────────────────────────────────────────────────────────────────────────────
+
+
+-- ── Domain 1: Nobel Prize in Physics ─────────────────────────────────────────
+
+PROMPT physics_prize_papers
+WITH BUDGET 4000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in physics.
+Provide accurate, verifiable information only.
+If you are not certain of a specific paper title, journal, or year,
+say so explicitly rather than guessing — factual accuracy matters more
+than completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) authored or
+co-authored by Nobel Prize winners in Physics.
+For each entry provide:
+| Prize winner | Nobel year | Paper title | Journal | Pub. year | 1-sentence summary |
+Cite only papers you are confident exist."
+    )
+WITH OUTPUT BUDGET 1200 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
+
+
+-- ── Domain 2: Fields Medal in Mathematics ────────────────────────────────────
+
+PROMPT math_prize_papers
+WITH BUDGET 4000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in pure and
+applied mathematics.
+Provide accurate, verifiable information only.
+If you are not certain of a specific paper title, journal, or year,
+say so explicitly rather than guessing — factual accuracy matters more
+than completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) authored or
+co-authored by Fields Medal winners in Mathematics.
+For each entry provide:
+| Medallist | Medal year | Paper title | Journal | Pub. year | 1-sentence summary |
+Cite only papers you are confident exist."
+    )
+WITH OUTPUT BUDGET 1200 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
+
+
+-- ── Domain 3: Turing Award in Computer Science ───────────────────────────────
+
+PROMPT cs_prize_papers
+WITH BUDGET 4000 tokens
+USING MODEL auto
+
+SELECT
+    system_role("You are a scholarly research assistant specialising in computer
+science and AI.
+Provide accurate, verifiable information only.
+If you are not certain of a specific paper title, venue, or year,
+say so explicitly rather than guessing — factual accuracy matters more
+than completeness."),
+    context.years AS time_window LIMIT 50 tokens
+
+GENERATE
+    list_recent_papers(
+        "List the 2 most recent research papers (2020-2025) authored or
+co-authored by Turing Award winners in Computer Science.
+For each entry provide:
+| Winner | Award year | Paper title | Venue (conf. / journal) | Pub. year | 1-sentence summary |
+Cite only papers you are confident exist."
+    )
+WITH OUTPUT BUDGET 1200 tokens,
+     TEMPERATURE 0.1,
+     FORMAT markdown;
