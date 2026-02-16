@@ -1,19 +1,19 @@
 flowchart TD
     A(["SPL Source (.spl file)"])
 
-    A --> B["Lexer\nchar stream → token stream"]
-    B --> C["Parser\ntoken stream → AST"]
-    C --> D["Analyzer\nAST → Validated AST"]
-    D --> E["Optimizer\nValidated AST → Execution Plan"]
-    E --> F["Executor\nExecution Plan → Results"]
+    A --> B["Lexer<br/>char stream → token stream"]
+    B --> C["Parser<br/>token stream → AST"]
+    C --> D["Analyzer<br/>AST → Validated AST"]
+    D --> E["Optimizer<br/>Validated AST → Execution Plan"]
+    E --> F["Executor<br/>Execution Plan → Results"]
 
     F --> G["LLM Adapter"]
     F --> H["Memory Store"]
     F --> I["RAG Store"]
 
     G --> J(["OpenRouter / Claude CLI"])
-    H --> K(["SQLite\n(.spl/memory.db)"])
-    I --> L(["FAISS / ChromaDB\n(.spl/vectors)"])
+    H --> K(["SQLite<br/>(.spl/memory.db)"])
+    I --> L(["FAISS / ChromaDB<br/>(.spl/vectors)"])
 
     style A fill:#dbeafe,stroke:#2563eb,color:#1e3a5f
     style B fill:#f0fdf4,stroke:#16a34a,color:#14532d
