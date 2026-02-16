@@ -88,7 +88,7 @@
 \begin{abstract}
 % ============================================================
 
-We present \textbf{SPL} (Structured Prompt Language), a declarative, SQL-inspired query language for managing LLM context as a constrained resource. Just as SQL (1970) standardized access to relational databases, SPL standardizes interactions with large language models by treating them as \emph{generative knowledge bases}---systems that not only store but actively synthesize knowledge. SPL introduces explicit \emph{token budget management} through declarative \texttt{WITH BUDGET} and \texttt{LIMIT} clauses, \emph{automatic context optimization} via a query optimizer that allocates tokens across heterogeneous sources, and \emph{execution plan transparency} through an \texttt{EXPLAIN} mechanism analogous to SQL's query plan. The language natively integrates retrieval-augmented generation (RAG) via FAISS vector stores and persistent memory via SQLite, unifying context retrieval, generation, and storage in a single declarative framework. We provide a formal EBNF grammar, a complete reference implementation as a pip-installable Python package, and a comparative analysis against existing approaches including Microsoft's Prompty, Stanford's DSPy, and LMQL. Our evaluation demonstrates that SPL reduces prompt engineering complexity while providing fine-grained control over the token budget---the fundamental constrained resource in LLM applications.
+We present \textbf{SPL} (Structured Prompt Language), a declarative, SQL-inspired query language for managing LLM context as a constrained resource. Just as SQL (1970) standardized access to relational databases, SPL standardizes interactions with large language models by treating them as \emph{generative knowledge bases}---systems that not only store but actively synthesize knowledge. SPL introduces explicit \emph{token budget management} through declarative \texttt{WITH BUDGET} and \texttt{LIMIT} clauses, \emph{automatic context optimization} via a query optimizer that allocates tokens across heterogeneous sources, and \emph{execution plan transparency} through an \texttt{EXPLAIN} mechanism analogous to SQL's query plan. The language natively integrates retrieval-augmented generation (RAG) via vector store and persistent memory via SQLite, unifying context retrieval, generation, and storage in a single declarative framework. We provide a formal EBNF grammar, a complete reference implementation as a pip-installable Python package, and a comparative analysis against existing approaches including Microsoft's Prompty, Stanford's DSPy, and LMQL. Our evaluation demonstrates that SPL reduces prompt engineering complexity while providing fine-grained control over the token budget---the fundamental constrained resource in LLM applications.
 
 \end{abstract}
 
@@ -462,7 +462,7 @@ The SPL optimizer also determines the order in which context sources are resolve
 \begin{enumerate}[nosep]
   \item \textbf{Cache hits}: Previously computed results (zero latency, zero cost)
   \item \textbf{Memory}: SQLite key-value lookups (sub-millisecond, zero cost)
-  \item \textbf{RAG}: FAISS vector search (milliseconds, minimal cost)
+  \item \textbf{RAG}: FAISS/ChromaDB vector search (milliseconds, minimal cost)
   \item \textbf{Context}: External input parameters (variable latency)
   \item \textbf{LLM calls}: The generation step (highest latency and cost)
 \end{enumerate}
@@ -632,7 +632,7 @@ SPL integrates two storage systems, both file-based for portability:
 
 \begin{description}[nosep]
   \item[SQLite Memory Store] (\texttt{.spl/memory.db}): Provides persistent key-value storage for \texttt{memory.get()} and \texttt{STORE RESULT IN memory.<key>}. Also stores prompt cache entries with TTL support. SQLite was chosen for its zero-configuration deployment, battle-tested reliability, and inclusion in the Python standard library.
-  \item[Vector Store] (\texttt{.spl/vectors.*}): Provides semantic similarity search for \texttt{rag.query()}. The engine supports two backends: \textbf{FAISS}~\citep{johnson2019billion} for file-based, zero-configuration deployment, and \textbf{ChromaDB} for richer metadata filtering and a managed-server mode. Both expose an identical Python interface, making the choice transparent to SPL queries. Document metadata is stored in a companion SQLite database (\texttt{.spl/vectors\_meta.db}).
+  \item[Vector Store] (\texttt{.spl/vectors.*}): Provides semantic similarity search for \texttt{rag.query()}. The engine supports two backends: \textbf{FAISS}~\citep{johnson2019billion} for file-based, zero-configuration deployment, and \textbf{ChromaDB}~\citep{chromadb2023} for richer metadata filtering and a managed-server mode. Both expose an identical Python interface, making the choice transparent to SPL queries. Document metadata is stored in a companion SQLite database (\texttt{.spl/vectors\_meta.db}).
 \end{description}
 
 Both stores reside in a \texttt{.spl/} directory within the project, analogous to \texttt{.git/} for version control. This directory is gitignore-able and self-contained, enabling reproducible deployments.
@@ -1078,7 +1078,7 @@ SPL's key innovations are:
   \item \textbf{Token budget as first-class concept}: \texttt{WITH BUDGET} and \texttt{LIMIT} clauses make resource constraints explicit and optimizable.
   \item \textbf{Generative knowledge base model}: The \texttt{SELECT}/\texttt{GENERATE} duality captures the fundamental difference between context retrieval and content synthesis.
   \item \textbf{EXPLAIN for LLM queries}: Transparent execution plans enable developers to inspect and optimize token allocation before execution.
-  \item \textbf{Integrated context management}: Built-in RAG (FAISS) and memory (SQLite) eliminate the need for external context infrastructure.
+  \item \textbf{Integrated context management}: Built-in RAG (FAISS/ChromaDB) and memory (SQLite) eliminate the need for external context infrastructure.
 \end{enumerate}
 
 Beyond software engineering, SPL lowers the entry barrier for the large community of
@@ -1117,7 +1117,7 @@ this project. The SPL engine, test suite, and manual drafting were developed
 in close collaboration with Claude, whose ability to implement, synthesise, and iterate
 on complex system designs substantially accelerated the work. 
 
-The author also thanks the open-source communities behind FAISS, tiktoken, and the
+The author also thanks the open-source communities behind FAISS, ChromaDB, tiktoken, and the
 broader Python ecosystem on which SPL depends.
 
 \bibliographystyle{plainnat}
