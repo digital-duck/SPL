@@ -6,9 +6,12 @@ through a single API endpoint and API key.
 
 from __future__ import annotations
 import json
+import logging
 import os
 from spl.adapters.base import LLMAdapter, GenerationResult
 from spl.token_counter import TokenCounter
+
+_log = logging.getLogger(__name__)
 
 # httpx is an optional dependency for this adapter
 try:
@@ -98,25 +101,102 @@ class OpenRouterAdapter(LLMAdapter):
                 f"OpenRouter API error ({response.status_code}): {response.text}"
             )
 
+        _log.debug(
+            "openrouter raw response  model=%s  status=%s  bytes=%d\n%s",
+            model, response.status_code, len(response.text), response.text,
+        )
+
         try:
             data = response.json()
-        except json.JSONDecodeError:
-            # Some models (e.g. z-ai/glm-4.6) return responses that embed raw
-            # control characters inside JSON string values — Python's json parser
-            # rejects these.  Strip ASCII control chars (except \t \n \r) and
-            # retry once before giving up.
+        except json.JSONDecodeError as _first_exc:
+            _log.warning(
+                "openrouter JSON parse failed (pass 1)  model=%s  error=%s  "
+                "raw_bytes=%d  — stripping control chars and retrying",
+                model, _first_exc, len(response.text),
+            )
+            # Pass 1 — strip ASCII control chars (GLM-4.6 embeds raw control bytes)
             import re as _re
             sanitized = _re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", response.text)
             try:
                 data = json.loads(sanitized)
-            except json.JSONDecodeError as exc:
-                raise RuntimeError(
-                    f"OpenRouter API returned unparseable JSON "
-                    f"(model={model}): {exc}"
-                ) from exc
+            except json.JSONDecodeError as _second_exc:
+                _log.error(
+                    "openrouter JSON parse failed (pass 2)  model=%s  error=%s\n"
+                    "=== RAW RESPONSE BODY (first 8000 chars) ===\n%s\n"
+                    "=== END RAW RESPONSE ===",
+                    model, _second_exc, response.text[:8000],
+                )
+                # Pass 2 — regex extraction (handles truncated responses, e.g. GLM-5)
+                # OpenRouter always wraps content as: "content": "<escaped text>"
+                # We capture the value even without the closing quote so truncated
+                # responses are partially recoverable.
+                m = _re.search(
+                    r'"content"\s*:\s*"((?:[^"\\]|\\.)*)',
+                    sanitized,
+                    _re.DOTALL,
+                )
+                if not m:
+                    _log.error(
+                        "openrouter regex extraction also failed  model=%s  "
+                        "full raw body saved below\n%s",
+                        model, response.text,
+                    )
+                    raise RuntimeError(
+                        f"OpenRouter API returned unparseable JSON "
+                        f"(model={model}): could not locate content field"
+                    )
+                raw = m.group(1)
+                # Unescape standard JSON escape sequences
+                content_recovered = (
+                    raw.replace("\\n", "\n")
+                       .replace("\\t", "\t")
+                       .replace('\\"', '"')
+                       .replace("\\\\", "\\")
+                       .replace("\\/", "/")
+                )
+                content_recovered += (
+                    "\n\n[NOTE: Response was truncated — "
+                    "JSON parse failed at the boundary. Content may be incomplete.]"
+                )
+                _log.warning(
+                    "openrouter regex extraction recovered %d chars  model=%s",
+                    len(content_recovered), model,
+                )
+                latency = self._elapsed_ms(start)
+                tok_in  = self.count_tokens(prompt, model)
+                tok_out = self.count_tokens(content_recovered, model)
+                return GenerationResult(
+                    content=content_recovered,
+                    model=model,
+                    input_tokens=tok_in,
+                    output_tokens=tok_out,
+                    total_tokens=tok_in + tok_out,
+                    latency_ms=latency,
+                    cost_usd=None,
+                )
 
-        choice = data["choices"][0]
-        content = choice["message"]["content"]
+        choice  = data["choices"][0]
+        message = choice["message"]
+        content = message.get("content") or ""
+
+        # Reasoning-model fallback (GLM-4.7, GLM-5, DeepSeek-R1, o3-mini …)
+        # These models put their answer in "reasoning" / "reasoning_content" and
+        # leave "content" empty.  We surface the reasoning so the run is not lost.
+        if not content.strip():
+            reasoning = (
+                message.get("reasoning")
+                or message.get("reasoning_content")
+                or ""
+            )
+            if reasoning:
+                _log.warning(
+                    "openrouter reasoning-only response  model=%s  "
+                    "content=empty  reasoning_chars=%d  finish_reason=%s  "
+                    "— using reasoning field as response content",
+                    model, len(reasoning), choice.get("finish_reason", "?"),
+                )
+                content = f"[Reasoning]\n\n{reasoning}"
+
         usage = data.get("usage", {})
 
         latency = self._elapsed_ms(start)

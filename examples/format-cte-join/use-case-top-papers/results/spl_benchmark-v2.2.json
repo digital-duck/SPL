@@ -288,13 +288,44 @@
       "resolved_from": "explicit",
       "input_spl": "-- papers-by-top-prize-winners-recently_v1.spl\n-- ─────────────────────────────────────────────────────────────────────────────\n-- User question (refined):\n--   \"List the most recent 2 papers published by each prize winner in\n--   Physics (Nobel Prize), in Mathematics (Fields Medal), and in Computer\n--   Science (Turing Award) in the last 5 years.\"\n--\n-- SPL design notes:\n--   • Three PROMPT statements — one per domain, independent budgets & routing\n--   • USING MODEL 'z-ai/glm-5' — MoM routes each domain to its strongest specialist\n--   • TEMPERATURE 0.1 — factual/recall mode, minimises hallucination variance\n--   • System role requires DOI/arXiv link per paper (forces verifiability;\n--     a fabricated title rarely survives a DOI check on Google Scholar)\n--   • \"unable to verify\" over guessing — surfaces honest model uncertainty\n--\n-- Run against a single model (Claude CLI, free):\n--   spl execute examples/format-cte-join/use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl \\\n--       --adapter claude_cli\n--\n-- BENCHMARK — compare ChatGPT, Gemini, Claude side-by-side:\n--   spl benchmark examples/format-cte-join/use-case-top-papers/papers-by-top-prize-winners-recently_v1.spl \\\n--       --model anthropic/claude-sonnet-4-5 \\\n--       --model openai/gpt-4o              \\\n--       --model google/gemini-pro-1.5      \\\n--       --adapter openrouter               \\\n--       --json > prize_papers_comparison.json\n-- ─────────────────────────────────────────────────────────────────────────────\n\n\n-- ── Domain 1: Nobel Prize in Physics ─────────────────────────────────────────\n\nPROMPT physics_prize_papers\nWITH BUDGET 6000 tokens\nUSING MODEL 'z-ai/glm-5'\n\nSELECT\n    system_role(\"You are a scholarly research assistant with deep expertise in\nphysics literature. Provide accurate, verifiable information only.\nFor each paper, include a DOI or arXiv link — if you cannot supply one,\nwrite 'N/A' rather than fabricating a link.\nIf you are not confident a paper exists, write 'unable to verify'\nin the title cell. Accuracy and verifiability matter more than completeness.\")\n\nGENERATE\n    list_recent_papers(\n        \"List the most recent 2 papers published by each Nobel Prize winner\nin Physics in the last 5 years (2020-2025).\nList EVERY individual laureate awarded from 2020 through 2024.\nFor each winner provide a separate section with two paper rows:\n\n| Winner | Nobel year | Paper title | Journal | Pub. year | DOI or arXiv |\n|--------|-----------|-------------|---------|-----------|--------------|\n\nDo not fabricate paper titles or links.\"\n    )\nWITH OUTPUT BUDGET 2500 tokens,\n     TEMPERATURE 0.1,\n     FORMAT markdown;\n\n\n-- ── Domain 2: Fields Medal in Mathematics ────────────────────────────────────\n-- Note: Fields Medal is awarded every 4 years at the ICM.\n-- The only cohort within 2020-2025 is 2022 (June Huh, Hugo Duminil-Copin,\n-- James Maynard, Maryna Viazovska). Next award: ICM 2026.\n\nPROMPT math_prize_papers\nWITH BUDGET 5000 tokens\nUSING MODEL 'z-ai/glm-5'\n\nSELECT\n    system_role(\"You are a scholarly research assistant with deep expertise in\nmathematics literature. Provide accurate, verifiable information only.\nFor each paper, include a DOI or arXiv link — if you cannot supply one,\nwrite 'N/A' rather than fabricating a link.\nIf you are not confident a paper exists, write 'unable to verify'\nin the title cell. Accuracy and verifiability matter more than completeness.\")\n\nGENERATE\n    list_recent_papers(\n        \"List the most recent 2 papers published by each Fields Medal winner\nin Mathematics in the last 5 years (2020-2025).\nThe Fields Medal is awarded every 4 years; the only cohort in this window\nis 2022. List all individual 2022 medallists.\nFor each medallist provide a separate section with two paper rows:\n\n| Medallist | Medal year | Paper title | Journal | Pub. year | DOI or arXiv |\n|-----------|-----------|-------------|---------|-----------|--------------|\n\nDo not fabricate paper titles or links.\"\n    )\nWITH OUTPUT BUDGET 1800 tokens,\n     TEMPERATURE 0.1,\n     FORMAT markdown;\n\n\n-- ── Domain 3: Turing Award in Computer Science ───────────────────────────────\n\nPROMPT cs_prize_papers\nWITH BUDGET 6000 tokens\nUSING MODEL 'z-ai/glm-5'\n\nSELECT\n    system_role(\"You are a scholarly research assistant with deep expertise in\ncomputer science literature. Provide accurate, verifiable information only.\nFor each paper, include a DOI or arXiv link — if you cannot supply one,\nwrite 'N/A' rather than fabricating a link.\nIf you are not confident a paper exists, write 'unable to verify'\nin the title cell. Accuracy and verifiability matter more than completeness.\")\n\nGENERATE\n    list_recent_papers(\n        \"List the most recent 2 papers published by each Turing Award winner\nin Computer Science in the last 5 years (2020-2025).\nList EVERY individual winner awarded from 2020 through 2024.\nFor each winner provide a separate section with two paper rows:\n\n| Winner | Award year | Paper title | Venue (conf./journal) | Pub. year | DOI or arXiv |\n|--------|-----------|-------------|----------------------|-----------|--------------|\n\nDo not fabricate paper titles or links.\"\n    )\nWITH OUTPUT BUDGET 2500 tokens,\n     TEMPERATURE 0.1,\n     FORMAT markdown;",
       "response": "",
-      "input_tokens": 0,
-      "output_tokens": 0,
-      "total_tokens": 0,
-      "latency_ms": 0.0,
+      "input_tokens": 617,
+      "output_tokens": 207531,
+      "total_tokens": 208148,
+      "latency_ms": 3459919.6167310146,
       "cost_usd": null,
-      "prompt_results": [],
-      "error": "OpenRouter API returned unparseable JSON (model=z-ai/glm-5): Expecting value: line 13285 column 1 (char 73062)"
+      "prompt_results": [
+        {
+          "prompt_name": "physics_prize_papers",
+          "model_id": "z-ai/glm-5",
+          "response": "",
+          "input_tokens": 196,
+          "output_tokens": 2500,
+          "total_tokens": 2696,
+          "latency_ms": 26311.44562100235,
+          "cost_usd": null
+        },
+        {
+          "prompt_name": "math_prize_papers",
+          "model_id": "z-ai/glm-5",
+          "response": "",
+          "input_tokens": 218,
+          "output_tokens": 202531,
+          "total_tokens": 202749,
+          "latency_ms": 3373786.03199801,
+          "cost_usd": null
+        },
+        {
+          "prompt_name": "cs_prize_papers",
+          "model_id": "z-ai/glm-5",
+          "response": "",
+          "input_tokens": 203,
+          "output_tokens": 2500,
+          "total_tokens": 2703,
+          "latency_ms": 59822.13911200233,
+          "cost_usd": null
+        }
+      ],
+      "error": ""
     }
   ]
 }

@@ -13,7 +13,7 @@ from spl.parser import Parser
 from spl.analyzer import Analyzer
 from spl.optimizer import Optimizer
 from spl.executor import Executor
-from spl.explain import explain_plan
+from spl.explain import explain_plan, explain_plans
 
 
 def parse(source: str):
@@ -37,8 +37,8 @@ def explain(source: str) -> str:
     analyzer = Analyzer()
     analyzed = analyzer.analyze(ast)
     optimizer = Optimizer()
-    plan = optimizer.optimize(analyzed)
-    return explain_plan(plan)
+    plans = optimizer.optimize(analyzed)   # returns list[ExecutionPlan]
+    return explain_plans(plans)
 
 
 async def execute(source: str, params: dict | None = None, adapter: str = "claude_cli"):

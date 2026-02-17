@@ -29,7 +29,9 @@ splflow benchmark papers-by-top-prize-winners-recently_v1.spl \
 #     --output ./results/spl_benchmark.json
 
 
-splflow rerun results/spl_benchmark-v2.json --model z-ai/glm-5 --adapter openrouter
+splflow rerun results/spl_benchmark-v2.json --model z-ai/glm-4.7 --adapter openrouter --log ./results/spl_benchmark-v2.1.log --output ./results/spl_benchmark-v2.1.json
+
+splflow rerun results/spl_benchmark-v2.json --model z-ai/glm-5 --adapter openrouter --log ./results/spl_benchmark-v2.2.log --output ./results/spl_benchmark-v2.2.json
 
 splflow benchmark papers-by-top-prize-winners-recently_v1.spl \
     --adapter openrouter \
