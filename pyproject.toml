@@ -10,7 +10,7 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
-    {name = "Wen Gong", email = "wen.gong.research@gmail.com"},
+    {name = "Digital Duck", email = "p2p2learn@outlook.com"},
 ]
 keywords = ["llm", "prompt-engineering", "sql", "declarative", "context-management"]
 classifiers = [
