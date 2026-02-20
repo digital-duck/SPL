@@ -70,12 +70,19 @@ class ClaudeCLIAdapter(LLMAdapter):
         except asyncio.TimeoutError:
             raise RuntimeError(f"Claude CLI timed out after {self.timeout}s")
 
+        stderr_text = stderr.decode('utf-8', errors='replace').strip()
+
         if proc.returncode != 0:
-            error_msg = stderr.decode('utf-8', errors='replace').strip()
-            raise RuntimeError(f"Claude CLI error (exit {proc.returncode}): {error_msg}")
+            raise RuntimeError(f"Claude CLI error (exit {proc.returncode}): {stderr_text}")
 
         content = stdout.decode('utf-8', errors='replace').strip()
         latency = self._elapsed_ms(start)
+
+        if not content:
+            hint = f" stderr: {stderr_text[:300]}" if stderr_text else " (no stderr either)"
+            raise RuntimeError(
+                f"Claude CLI returned empty response (rc=0, latency={latency:.0f}ms).{hint}"
+            )
 
         # Estimate tokens (Claude doesn't expose tokenizer publicly)
         input_tokens = len(full_prompt) // 4

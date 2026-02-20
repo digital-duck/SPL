@@ -1,7 +1,7 @@
 # format-cte-join — Real-World Validation Suite
 
 **Use case**: Generate a multilingual table of Chinese characters containing the radical 日 (rì),
-including formula, pinyin, English meaning, Chinese explanation, German translation, and natural insight.
+including character decomposition formula, pinyin, English meaning, Chinese explanation, German translation, and natural insight.
 
 Inspired by the 日 Family case study in:
 > Wen Gong, *Geometric Patterns of Meaning: A PHATE Manifold Analysis of Multi-lingual Embeddings*,
