@@ -6,6 +6,7 @@ Invokes `claude -p "<prompt>"` via subprocess.
 
 from __future__ import annotations
 import asyncio
+import os
 import subprocess
 from spl.adapters.base import LLMAdapter, GenerationResult
 
@@ -52,12 +53,18 @@ class ClaudeCLIAdapter(LLMAdapter):
         if self.allowed_tools:
             cmd += ["--allowedTools", ",".join(self.allowed_tools)]
 
+        # Strip CLAUDECODE so the claude binary accepts nested invocations.
+        # Without this, running inside an active Claude Code session causes
+        # `claude -p` to exit silently with rc=1 (nested-session protection).
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
         # Run subprocess asynchronously
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=env,
             )
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(), timeout=self.timeout
