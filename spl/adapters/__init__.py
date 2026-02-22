@@ -28,9 +28,11 @@ def _register_builtin_adapters():
     from spl.adapters.claude_cli import ClaudeCLIAdapter
     from spl.adapters.openrouter import OpenRouterAdapter
     from spl.adapters.ollama import OllamaAdapter
+    from spl.adapters.cloud_direct import CloudDirectAdapter
     register_adapter("claude_cli", ClaudeCLIAdapter)
     register_adapter("openrouter", OpenRouterAdapter)
     register_adapter("ollama", OllamaAdapter)
+    register_adapter("cloud_direct", CloudDirectAdapter)
 
 
 _register_builtin_adapters()
