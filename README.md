@@ -196,3 +196,24 @@ The entire SPL engine --- from idea to working prototype with arxiv paper --- wa
 - **Co-creation**: Built via Human+AI collaboration ([log](docs/dev/co-creation-log.md))
 - **History**: [Why SPL required interdisciplinary thinking](docs/history-lessons.md)
 - **License**: Apache 2.0
+
+## Citation
+
+If you use SPL in your research, please cite:
+
+```bibtex
+@article{gong2026spl,
+  title={SPL: Structured Prompt Language - SQL for LLM Context Management},
+  author={Gong, Wen},
+  journal={arXiv preprint},
+  note={arXiv submission 7290701 (in review)},
+  year={2026},
+  url={https://github.com/digital-duck/SPL}
+}
+```
+
+**ArXiv Status:**
+- 🔄 **Submission ID:** 7290701 (currently under review)
+- 📄 **Final listing:** Will be updated to `arXiv:XXXX.XXXXX` once published
+
+**Paper:** [Local draft](docs/paper/spl-paper.tex) | [Figures](docs/paper/figures/) | [Benchmark data](docs/paper/data/)
