@@ -52,6 +52,8 @@ class TokenType(Enum):
     REFRESH = auto()
     EVERY = auto()
     MATERIALIZED = auto()
+    GRID = auto()
+    VRAM = auto()
 
     # Built-in source identifiers (recognized during parsing, not lexing)
     # system_role, context, rag, memory are parsed as IDENTIFIER + DOT patterns
@@ -134,6 +136,8 @@ KEYWORDS: dict[str, TokenType] = {
     "refresh": TokenType.REFRESH,
     "every": TokenType.EVERY,
     "materialized": TokenType.MATERIALIZED,
+    "grid": TokenType.GRID,
+    "vram": TokenType.VRAM,
 }
 
 

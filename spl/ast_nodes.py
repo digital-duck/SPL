@@ -175,6 +175,8 @@ class PromptStatement:
     order_by: list[OrderByItem] | None = None
     generate_clause: GenerateClause | None = None
     store_clause: StoreClause | None = None
+    on_grid: str | None = None        # hub URL, or "" to use adapter-configured hub
+    min_vram_gb: float | None = None  # VRAM hint (GB) for i-grid dispatcher
 
 
 @dataclass

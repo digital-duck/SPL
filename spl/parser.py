@@ -100,9 +100,29 @@ class Parser:
             else:
                 version = self._expect(TokenType.STRING).value
 
+        # ON GRID [<url>]  — opt this PROMPT into i-grid distributed execution
+        on_grid = None
+        if self._check(TokenType.ON) and self._peek_is(TokenType.GRID):
+            self._advance()  # ON
+            self._advance()  # GRID
+            if self._check(TokenType.STRING):
+                on_grid = self._advance().value
+            else:
+                on_grid = ""  # inherit hub URL from adapter config
+
+        # WITH VRAM <n>  — VRAM hint (GB) for i-grid dispatcher
+        min_vram_gb = None
+        if self._check(TokenType.WITH) and self._peek_is(TokenType.VRAM):
+            self._advance()  # WITH
+            self._advance()  # VRAM
+            if self._check(TokenType.FLOAT):
+                min_vram_gb = float(self._advance().value)
+            else:
+                min_vram_gb = float(self._expect(TokenType.INTEGER).value)
+
         # Parse optional CTEs: WITH <name> AS (...)
         ctes = []
-        if self._check(TokenType.WITH) and not self._peek_is(TokenType.BUDGET):
+        if self._check(TokenType.WITH) and not self._peek_is(TokenType.BUDGET) and not self._peek_is(TokenType.VRAM):
             ctes = self._parse_cte_block()
 
         # Parse SELECT clause
@@ -134,6 +154,8 @@ class Parser:
             model=model,
             cache_duration=cache_duration,
             version=version,
+            on_grid=on_grid,
+            min_vram_gb=min_vram_gb,
             ctes=ctes,
             select_items=select_items,
             where_clause=where_clause,
@@ -211,6 +233,26 @@ class Parser:
             else:
                 model = self._read_model_name()
 
+        # ON GRID [<url>]
+        on_grid = None
+        if self._check(TokenType.ON) and self._peek_is(TokenType.GRID):
+            self._advance()  # ON
+            self._advance()  # GRID
+            if self._check(TokenType.STRING):
+                on_grid = self._advance().value
+            else:
+                on_grid = ""  # inherit hub URL from adapter config
+
+        # WITH VRAM <n>
+        min_vram_gb = None
+        if self._check(TokenType.WITH) and self._peek_is(TokenType.VRAM):
+            self._advance()  # WITH
+            self._advance()  # VRAM
+            if self._check(TokenType.FLOAT):
+                min_vram_gb = float(self._advance().value)
+            else:
+                min_vram_gb = float(self._expect(TokenType.INTEGER).value)
+
         select_items = self._parse_select_clause()
 
         generate_clause = None
@@ -221,6 +263,8 @@ class Parser:
             name=name,
             budget=budget,
             model=model,
+            on_grid=on_grid,
+            min_vram_gb=min_vram_gb,
             select_items=select_items,
             generate_clause=generate_clause,
         )

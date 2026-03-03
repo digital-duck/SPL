@@ -33,6 +33,12 @@ def _register_builtin_adapters():
     register_adapter("openrouter", OpenRouterAdapter)
     register_adapter("ollama", OllamaAdapter)
     register_adapter("cloud_direct", CloudDirectAdapter)
+    # Register igrid adapter if momahub-claude (igrid package) is installed
+    try:
+        from igrid.spl.igrid_adapter import IGridAdapter
+        register_adapter("igrid", IGridAdapter)
+    except ImportError:
+        pass  # igrid not installed; ON GRID will warn and fall back to local
 
 
 _register_builtin_adapters()

@@ -141,9 +141,20 @@ class Executor:
                     context_used=context_parts,
                 )
 
-        # Step 5: Call LLM
+        # Step 5: Call LLM (route to IGridAdapter if ON GRID is set on top-level PROMPT)
+        effective_adapter = self.adapter
+        if stmt and stmt.on_grid is not None:
+            try:
+                from spl.adapters import get_adapter
+                hub_url = stmt.on_grid or getattr(self.adapter, 'hub_url', '')
+                effective_adapter = get_adapter("igrid", hub_url=hub_url)
+            except ValueError:
+                _log.warning(
+                    "[%s] ON GRID specified but 'igrid' adapter not registered. "
+                    "Falling back to local adapter.", plan.prompt_name
+                )
         _log.info("[%s] calling LLM ...", plan.prompt_name)
-        gen_result = await self.adapter.generate(
+        gen_result = await effective_adapter.generate(
             prompt=prompt,
             model=plan.model or "",
             max_tokens=plan.output_budget,
@@ -240,8 +251,30 @@ class Executor:
             return f"[CTE '{step.alias}' has no nested PROMPT]"
         assert isinstance(cte_stmt, PromptStatement)
         _log.info("[CTE:%s] starting  model=%s", step.alias, cte_stmt.model or "default")
+
+        # Route to IGridAdapter if CTE PROMPT has ON GRID
+        if cte_stmt.on_grid is not None:
+            try:
+                from spl.adapters import get_adapter
+                hub_url = cte_stmt.on_grid or getattr(self.adapter, 'hub_url', '')
+                grid_adapter = get_adapter("igrid", hub_url=hub_url)
+                sub_executor = Executor(
+                    adapter=grid_adapter,
+                    storage_dir=self._storage_dir,
+                    vector_backend=self._vector_backend,
+                    cache_enabled=self.cache_enabled,
+                )
+            except ValueError:
+                _log.warning(
+                    "[CTE:%s] ON GRID specified but 'igrid' adapter not registered. "
+                    "Falling back to local adapter.", step.alias
+                )
+                sub_executor = self
+        else:
+            sub_executor = self
+
         sub_plan = Optimizer().optimize_single(cte_stmt)
-        result = await self.execute(sub_plan, params=params, stmt=cte_stmt)
+        result = await sub_executor.execute(sub_plan, params=params, stmt=cte_stmt)
         _log.info("[CTE:%s] done  tokens=%d  latency=%.0fms",
                   step.alias, result.total_tokens, result.latency_ms)
         return result.content
