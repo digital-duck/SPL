@@ -39,7 +39,7 @@ class Parser:
     # === Statement Dispatch ===
 
     def _parse_statement(self):
-        if self._check(TokenType.PROMPT):
+        if self._check(TokenType.PROMPT) or self._check(TokenType.WITH):
             return self._parse_prompt_statement()
         elif self._check(TokenType.CREATE):
             return self._parse_create_function()
@@ -56,6 +56,10 @@ class Parser:
     # === PROMPT Statement ===
 
     def _parse_prompt_statement(self) -> PromptStatement:
+        # Optional CTEs at the start: WITH <name> AS (...)
+        ctes = []
+        if self._check(TokenType.WITH) and not self._peek_is(TokenType.BUDGET) and not self._peek_is(TokenType.VRAM):
+            ctes = self._parse_cte_block()
         self._expect(TokenType.PROMPT)
         name = self._expect(TokenType.IDENTIFIER).value
 
@@ -180,7 +184,7 @@ class Parser:
         self._expect(TokenType.LPAREN)
 
         # CTE body can be either a nested PROMPT statement or a SELECT clause
-        if self._check(TokenType.PROMPT):
+        if self._check(TokenType.PROMPT) or self._check(TokenType.WITH):
             nested_prompt = self._parse_inner_prompt()
             self._expect(TokenType.RPAREN)
             return CTEClause(name=name, nested_prompt=nested_prompt)
