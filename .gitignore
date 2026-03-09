@@ -1,4 +1,8 @@
 .spl/
+CLAUDE.md
+GEMINI.md
+docs/dev/
+docs/how-to-init/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
