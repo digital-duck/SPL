@@ -49,19 +49,25 @@ class ClaudeCLIAdapter(LLMAdapter):
             full_prompt = f"System: {system}\n\nUser: {prompt}"
 
         # Build CLI command
-        cmd = [self.cli_path, "-p", full_prompt]
+        cmd = [self.cli_path, "-p", full_prompt, "--no-session-persistence"]
         if self.allowed_tools:
             cmd += ["--allowedTools", ",".join(self.allowed_tools)]
+        else:
+            # No tools needed — disabling avoids loading tool schemas and
+            # permission checks, which cuts ~50s of startup overhead.
+            cmd += ["--tools", ""]
 
-        # Strip CLAUDECODE so the claude binary accepts nested invocations.
+        # Strip Claude Code session markers so the CLI accepts nested invocations.
         # Without this, running inside an active Claude Code session causes
         # `claude -p` to exit silently with rc=1 (nested-session protection).
-        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+        _CLAUDE_SESSION_VARS = {"CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT"}
+        env = {k: v for k, v in os.environ.items() if k not in _CLAUDE_SESSION_VARS}
 
         # Run subprocess asynchronously
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
+                stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=env,

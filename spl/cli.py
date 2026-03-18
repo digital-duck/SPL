@@ -493,6 +493,11 @@ def cmd_execute(
         raise click.ClickException(msg) from exc
 
 
+# ── spl run (alias for execute) ───────────────────────────────────────────────
+
+cli.add_command(cli.commands["execute"], name="run")
+
+
 # ── spl memory ────────────────────────────────────────────────────────────────
 
 @cli.group("memory")
