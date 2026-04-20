@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "spl-llm"
+name = "spl1"
 version = "0.1.1"
-description = "Structured Prompt Language - SQL for LLM Context Management"
+description = "Structured Prompt Language v1.0 — SQL for LLM Context Management (superseded by spl-llm>=3.0.0)"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["llm", "prompt-engineering", "sql", "declarative", "context-management"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -48,6 +48,8 @@ spl = "spl.cli:main"
 [project.urls]
 Homepage = "https://github.com/digital-duck/SPL"
 Repository = "https://github.com/digital-duck/SPL"
+"arXiv Paper" = "https://arxiv.org/abs/2602.21257"
+"Successor Package" = "https://pypi.org/project/spl-llm/"
 
 [tool.setuptools.packages.find]
 include = ["spl*"]
